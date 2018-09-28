@@ -1,9 +1,10 @@
-# Package Summary
+# Package
 
-rosrt_rt2 is a packege of ROS node to manipulate RT.works' robot assist walker RT.2.
-This explains how to use it.
+Robot Assist Walker RT1 
 
-**NOTE:RT.works does not support using RT.2 with ROS. This may break the product and it is not covered by warranty.**
+ros_start is a package of ROS node to manipulate RT.works' robot assist walker RT1
+
+RT1 is programmed to do obstacle avoiding, passive intuitive braking system. 
 
 # Preparation
 
@@ -26,25 +27,11 @@ PIN #2 of J1102(TXD pulled up to 3.3v) --- PIN #5(YELLOW) of Converter
 
 PIN #3 of J1102(GND) --- PIN #1(BLACK) of Converder
 
-## Software
-
-get source codes from Github repository(https://github.com/alexandrokatayama/rosrt_rt2.git )
-
-File	|Explanation
---	|--
-src/rosrt_rt2.cpp | source code of ROS node.
-msg/Rt2Sensor.msg | definition of message from the node.
-script/sample.py  | sample script to send command to the node.
-
-Declare the src/rosrt_rt2.cpp as executable in CMakeLists.txt.
-Declare the msg/Rt2Sensor.msg as message in CMakeLists.txt.
-Then build them in the workspace.
-
 # Operation
 
 ## Power up the RT.2
 
-Push power button on the control box.
+Switch on the power on the control box. Press power button on the panel.
 
 ## On the PC
 
@@ -52,19 +39,21 @@ Push power button on the control box.
 	$ roscore
 ### Set up the serial port
 ```
-# stty -F /dev/ttyUSB0 raw -echo speed 115200
+$ stty -F /dev/ttyUSB0 raw -echo speed 115200
 ```
-If you need to use another port like /dev/ttyUSB1, edit the source code of the node.
+if the udev rule is already set use:
+```
+$ stty -F /dev/rt1 raw -echo speed 115200
+```
 ### Start the node
 ```
-$ rosrun ros_start rosrt_rt2
+$ rosrun ros_start rosrt_rt1
 ```
-### Start monitoring sensor values
+### Start controller
 ```
-$ rostopic echo /rosrt_rt2
+$ rosrun ros_start rt1_con
 ```
-### Start script
+### Launch file (node, controller, odometry, rplidar)
 ```
-$ rosrun ros_start sample.py /mobile_base/commands/velocity:=/cmd_vel
+$ roslaunch ros_start rt1.launch
 ```
-Then RT.2 moves forward, backward, and turn left and right.

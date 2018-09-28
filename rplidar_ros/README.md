@@ -1,5 +1,7 @@
-RPLIDAR ROS package
+#RPLIDAR ROS package
 =====================================================================
+
+Modified for angled detection system
 
 ROS node and test application for RPLIDAR
 
