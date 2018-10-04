@@ -6,20 +6,29 @@
 class RT1Param
 {
 public:
-  double  vel_lin;
-  double  vel_ang;
+  double max_lin, max_rot, min_lin, min_rot;
+  double k_lin, k_rot;
   //+++NEW: max change for handle_to_vel
 
   RT1Param()
   {
-    vel_lin = 0;
-    vel_ang = 0;
+    k_lin = 1/20;
+    k_rot = 1/150;
+    min_lin = 0.1;
+    min_rot = 0.2;
+    max_lin = 1;
+    max_rot = 2;
   }
 
   bool load(const ros::NodeHandle &nh)
   {
-    nh.param<double>("vel_lin", vel_lin, vel_lin);
-    nh.param<double>("vel_ang", vel_ang, vel_ang);
+    nh.param<double>("k_lin", k_lin, k_lin);
+    nh.param<double>("k_rot", k_rot, k_rot);
+    nh.param<double>("min_lin", min_lin, min_lin);
+    nh.param<double>("min_rot", min_rot, min_rot);
+    nh.param<double>("max_lin", max_lin, max_lin);
+    nh.param<double>("max_rot", max_rot, max_rot);
+
 
     return true;
   }

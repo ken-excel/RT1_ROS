@@ -10,7 +10,7 @@
 #include "std_msgs/String.h"
 #include <iostream>
 #include <geometry_msgs/Twist.h>
-#include "geometry_msgs/Vector3Stamped.h"
+#include "ros_start/Difficulty.h"
 #include "ros_start/Rt1Sensor.h"
 
 class RT1
@@ -33,14 +33,15 @@ private:
 
   	bool command_move;
 	double difL,difF,difR;
-	double last_lin,last_rot; //last handle data for pushing, rotating
-	double vel_lin, vel_ang;
+	double vel_lin, vel_rot;
+	double lin_handle, rot_handle,last_lin,last_rot; //last handle data for pushing, rotating
+	double max_lin, max_rot, min_lin, min_rot;
+	double k_lin, k_rot;	
 
 	geometry_msgs::Twist velocity_compute();
 	void Callback_vel(const geometry_msgs::Twist &twist);
 	void Callback_sensor(const ros_start::Rt1Sensor &msg);
-	void Callback_mode(const std_msgs::String &command);
-	void Callback_difficulty(const geometry_msgs::Vector3Stamped &diff);
+	void Callback_difficulty(const ros_start::Difficulty &diff);
 };
 
 #endif

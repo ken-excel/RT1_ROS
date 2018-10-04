@@ -42,16 +42,16 @@ catkin_package(
 )
 
 add_executable(rosrt_rt1 src/rosrt_rt1.cpp)
-target_link_libraries(rosrt_rt1 ${catkin_LIBRARIES})
 add_dependencies(rosrt_rt1 ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(rosrt_rt1 ${catkin_LIBRARIES})
 
 add_executable(rt1_node src/rt1_node.cpp src/rt1_con.cpp)
-target_link_libraries(rt1_node ${catkin_LIBRARIES})
 add_dependencies(rt1_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(rt1_node ${catkin_LIBRARIES})
 
 add_executable(rt1_odom src/rt1_odom.cpp)
-target_link_libraries(rt1_odom ${catkin_LIBRARIES})
 add_dependencies(rt1_odom ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(rt1_odom ${catkin_LIBRARIES})
 
 
 

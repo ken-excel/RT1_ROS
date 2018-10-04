@@ -16,15 +16,20 @@ RT1::RT1():
   obstacle_sub_ = nh_.subscribe("/rt1_con/difficulty", 1, &RT1::Callback_difficulty, this);
   cmd_vel_pub_  = nh_.advertise<geometry_msgs::Twist>("/cmd_vel", 1);
   sensor_sub_ = nh_.subscribe("/rosrt_rt1", 1000, &RT1::Callback_sensor,this);
-  vel_lin = param_.vel_lin;
-  vel_ang = param_.vel_ang;
+  max_lin = param_.max_lin;
+  max_rot = param_.max_rot;
+  min_lin = param_.min_lin;
+  min_rot = param_.min_rot;
+  k_lin = param_.k_lin;
+  k_rot = param_.k_rot;
+     
 }
 
 geometry_msgs::Twist RT1::velocity_compute()
 {
     geometry_msgs::Twist computed;
     computed.linear.x = vel_lin;
-    computed.angular.z = vel_ang;
+    computed.angular.z = vel_rot;
     if(difF>20){
         if(computed.linear.x>0)computed.linear.x = 0;
         else if(computed.linear.x<0)computed.linear.x *=1.3; //Easier Back 
@@ -44,7 +49,7 @@ geometry_msgs::Twist RT1::velocity_compute()
         if(difR>20){
             computed.angular.z=0;
         }
-        else computed.angular.z*fabs((difR-20)/20);
+        else computed.angular.z*=fabs((difR-20)/20);
     }
 
     return computed;
@@ -52,34 +57,43 @@ geometry_msgs::Twist RT1::velocity_compute()
 
 void RT1::Callback_sensor(const ros_start::Rt1Sensor &msg)
 {
-    double lin_handle, rot_handle; //handle data for pushing, rotating
-    if (msg.handle.force.x>2||msg.handle.force.x<-2){ 
-        lin_handle=msg.handle.force.x;
-        if (msg.handle.force.x>20) lin_handle = 20;
-        else if (msg.handle.force.x<-20) lin_handle = -20;
-        }
-    else lin_handle = 0;
-    if (msg.handle.torque.z>30||msg.handle.torque.z<-30){ 
-        rot_handle = msg.handle.torque.z;
-        if (msg.handle.torque.z>300) rot_handle = 300;
-        else if (msg.handle.torque.z<-300) rot_handle = -300;
-        }
-    else rot_handle = 0;
-    if (abs(lin_handle-last_lin)>5) lin_handle/=2; //check THIS back and forth prevention
-    //+++NEW: Set maximum change per loop => act like acceleration : set in Param !!!Take Care that this could prevent fast stop!
-    //Adjust value
-    vel_lin=lin_handle/20;
-    vel_ang=rot_handle/150;
-    last_lin = lin_handle;
-    last_rot = rot_handle;
+    lin_handle = msg.handle.force.x;
+    rot_handle = msg.handle.torque.z; //handle data for pushing, rotating
+    vel_lin=lin_handle*k_lin;
+    vel_rot=rot_handle*k_rot;
+
+    if (fabs(vel_lin) < min_lin){
+        vel_lin = 0;
+    }
+    else if (vel_lin > max_lin) vel_lin = max_lin;
+    else if (vel_lin < -max_lin) vel_lin = -max_lin;
+    
+    if (fabs(vel_rot) < min_rot){
+        vel_rot = 0;
+    }
+    else if (vel_rot > max_rot) vel_rot = max_rot;
+    else if (vel_rot < -max_rot) vel_rot = -max_rot;
+
+    if(fabs(vel_lin - last_lin)>max_lin/4){
+        if(vel_lin > last_lin) vel_lin = last_lin + max_lin/4;
+        else vel_lin = last_lin - max_lin/4;
+    }
+
+    if(fabs(vel_rot - last_rot)>max_rot/4){
+        if(vel_rot > last_rot) vel_rot = last_rot + max_rot/4;
+        else vel_rot = last_rot - max_rot/4; 
+    }
+    
+    last_lin = vel_lin;
+    last_rot = vel_rot;
     command_move=true;
 }
 
-void RT1::Callback_difficulty(const geometry_msgs::Vector3Stamped &diff)
+void RT1::Callback_difficulty(const ros_start::Difficulty &diff)
 {
-    difL=diff.vector.x;
-    difF=diff.vector.y;
-    difR=diff.vector.z;
+    difL=diff.difficulty.data[0];
+    difF=diff.difficulty.data[1];
+    difR=diff.difficulty.data[2];
 }
 
 void RT1::process()
