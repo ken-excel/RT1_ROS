@@ -206,7 +206,12 @@ static void *subTask(void *stock)
 	msg.accel.angular.x = 0.0;
 	msg.accel.angular.y = 0.0;
 	msg.accel.angular.z = 0.0;
-	
+	msg.handleadj.force.x = 0.0;
+	msg.handleadj.force.y = 0.0;
+	msg.handleadj.force.z = 0.0;
+	msg.handleadj.torque.x = 0.0;
+	msg.handleadj.torque.y = 0.0;
+	msg.handleadj.torque.z = 0.0;
 
 	latest_speed_left = 0.0;
 	latest_speed_right = 0.0;
@@ -224,10 +229,10 @@ if (fd < 0) fprintf(stderr, "open %s error\n", receive_stock->port_);
 	write3(fd, uart_send_buf, strlen(uart_send_buf));
 	strcpy(uart_send_buf, "fturn1\r\n");
 	write3(fd, uart_send_buf, strlen(uart_send_buf));
-	// strcpy(uart_send_buf, "fspeed2048\r\n");
-	// write3(fd, uart_send_buf, strlen(uart_send_buf));
-	// strcpy(uart_send_buf, "fradiu2048\r\n");
-	// write3(fd, uart_send_buf, strlen(uart_send_buf));
+	strcpy(uart_send_buf, "fspeed2048\r\n");
+	write3(fd, uart_send_buf, strlen(uart_send_buf));
+	strcpy(uart_send_buf, "fradiu2048\r\n");
+	write3(fd, uart_send_buf, strlen(uart_send_buf));
 	strcpy(uart_send_buf, "mtlr2\r\n");
 	write3(fd, uart_send_buf, strlen(uart_send_buf));
 	strcpy(uart_send_buf, "mtrr2\r\n");
@@ -269,15 +274,10 @@ if (fd < 0) fprintf(stderr, "open %s error\n", receive_stock->port_);
 				fspeed = (int)speed_right;
 				fradiu = (int)(1000.0 * speed_left / speed_right) - 1000;
 			}
-			else if (rotate < 0.0) //editted: Ken
+			else
 			{
 				fspeed = (int)speed_left;
 				fradiu = 1000 - (int)(1000.0 * speed_right / speed_left);
-			}
-			else
-			{
-				fspeed = (int)((speed_left+speed_right)/2);
-				fradiu = 0;
 			}
 
 			if (fspeed >= 2000)
@@ -444,8 +444,8 @@ if (fd < 0) fprintf(stderr, "open %s error\n", receive_stock->port_);
 		usleep(WAIT_SLEEP_NS);	/* 10ms */
 	}
 
-	// strcpy(uart_send_buf, "fdrive0\r\n");
-	// write3(fd, uart_send_buf, strlen(uart_send_buf));
+	strcpy(uart_send_buf, "fdrive0\r\n");
+	write3(fd, uart_send_buf, strlen(uart_send_buf));
 	strcpy(uart_send_buf, "mtlr1\r\n");
 	write3(fd, uart_send_buf, strlen(uart_send_buf));
 	strcpy(uart_send_buf, "mtrr1\r\n");

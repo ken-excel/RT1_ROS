@@ -12,11 +12,11 @@ public:
 
   RT1Param()
   {
-    k_lin = 1/20;
-    k_rot = 1/150;
+    k_lin = 0.05;
+    k_rot = 0.00667;
     min_lin = 0.1;
     min_rot = 0.2;
-    max_lin = 1;
+    max_lin = 1.5;
     max_rot = 2;
   }
 

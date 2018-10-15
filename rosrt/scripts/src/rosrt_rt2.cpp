@@ -1,6 +1,6 @@
 #include <ros/ros.h>
 #include <geometry_msgs/Twist.h>
-#include "ros_start/Rt1Sensor.h"
+#include "ros_start/Rt2Sensor.h"
 #include <pthread.h>
 #include <std_msgs/String.h>
 #include <fcntl.h>
@@ -147,7 +147,7 @@ static ssize_t write3(int fd, const void *buf, size_t count)
 {
 	ssize_t ret;
 
-	printf("write %s", (char *)buf);
+//	printf("write %s", (char *)buf);
 	ret = 0;
 	ret += write(fd, buf, count);
 	ret += write(fd, buf, count);
@@ -164,6 +164,8 @@ static void *subTask(void *stock)
 #define WAIT_SLEEP_NS (10*1000)	/* 10ms */
 #define WAIT_100MSEC_CNT_MAX (10)
 #define WAIT_1SEC_CNT_MAX (100)
+#define WAIT_5SEC_CNT_MAX (500)
+	int wait_5sec_cnt;
 	int wait_1sec_cnt;
 	int wait_100msec_cnt;
 #define UART_BUF_LEN (256)
@@ -173,12 +175,11 @@ static void *subTask(void *stock)
 	int uart_receive_len;
 	char uart_tmp_buf[UART_BUF_LEN];
 	int uart_tmp_len;
-	ros_start::Rt1Sensor msg;
+	ros_start::Rt2Sensor msg;
 	double speed, rotate;
 	double speed_left, speed_right;
 	int fspeed, fradiu;
 	double latest_speed_left, latest_speed_right;
-	double latest_force_left, latest_force_right;
 	int fd;
 	int pos;
 	int i;
@@ -194,40 +195,31 @@ static void *subTask(void *stock)
 	msg.velocity.angular.x = 0.0;
 	msg.velocity.angular.y = 0.0;
 	msg.velocity.angular.z = 0.0;
-	msg.handle.force.x = 0.0;
-	msg.handle.force.y = 0.0;
-	msg.handle.force.z = 0.0;
-	msg.handle.torque.x = 0.0;
-	msg.handle.torque.y = 0.0;
-	msg.handle.torque.z = 0.0;
 	msg.accel.linear.x = 0.0;
 	msg.accel.linear.y = 0.0;
 	msg.accel.linear.z = 0.0;
 	msg.accel.angular.x = 0.0;
 	msg.accel.angular.y = 0.0;
 	msg.accel.angular.z = 0.0;
-	
 
 	latest_speed_left = 0.0;
 	latest_speed_right = 0.0;
-	latest_force_left = 0.0;
-	latest_force_right = 0.0;
 
 	/* UART open */
 	fd = open(receive_stock->port_, O_RDWR | O_NONBLOCK);
 if (fd < 0) fprintf(stderr, "open %s error\n", receive_stock->port_);
 
-	/* UART‘—M */
-	strcpy(uart_send_buf, "setmode dbg rtw12345\r\n");
+	/* UART���M */
+	strcpy(uart_send_buf, "setmode dbg rtw65371\r\n");
 	write3(fd, uart_send_buf, strlen(uart_send_buf));
 	strcpy(uart_send_buf, "fdrive1\r\n");
 	write3(fd, uart_send_buf, strlen(uart_send_buf));
 	strcpy(uart_send_buf, "fturn1\r\n");
 	write3(fd, uart_send_buf, strlen(uart_send_buf));
-	// strcpy(uart_send_buf, "fspeed2048\r\n");
-	// write3(fd, uart_send_buf, strlen(uart_send_buf));
-	// strcpy(uart_send_buf, "fradiu2048\r\n");
-	// write3(fd, uart_send_buf, strlen(uart_send_buf));
+	strcpy(uart_send_buf, "fspeed2048\r\n");
+	write3(fd, uart_send_buf, strlen(uart_send_buf));
+	strcpy(uart_send_buf, "fradiu2048\r\n");
+	write3(fd, uart_send_buf, strlen(uart_send_buf));
 	strcpy(uart_send_buf, "mtlr2\r\n");
 	write3(fd, uart_send_buf, strlen(uart_send_buf));
 	strcpy(uart_send_buf, "mtrr2\r\n");
@@ -236,11 +228,10 @@ if (fd < 0) fprintf(stderr, "open %s error\n", receive_stock->port_);
 	write3(fd, uart_send_buf, strlen(uart_send_buf));
 	strcpy(uart_send_buf, "syr2\r\n");
 	write3(fd, uart_send_buf, strlen(uart_send_buf));
-	strcpy(uart_send_buf, "sfr2\r\n");
-	write3(fd, uart_send_buf, strlen(uart_send_buf));
 
 	wait_100msec_cnt = WAIT_100MSEC_CNT_MAX;
 	wait_1sec_cnt = 0;
+	wait_5sec_cnt = WAIT_5SEC_CNT_MAX;
 
 	for(;task_end == 0;)
 	{
@@ -249,38 +240,39 @@ if (fd < 0) fprintf(stderr, "open %s error\n", receive_stock->port_);
 			speed = last_twist_buf[last_twist_cnt_r].linear.x;		/* m/s */
 			rotate = last_twist_buf[last_twist_cnt_r].angular.z;	/* rad/s */
 			printf("twist %g %g\n", speed, rotate);
-			
+
 			last_twist_cnt_r++;
 			if (last_twist_cnt_r >= MAX_TWIST_CNT)
 			{
 				last_twist_cnt_r = 0;
 			}
 
-#define REAR_TREAD_RT1	(0.42)		/*!< ‹ì“®—Ö‚ÌƒgƒŒƒbƒh[m] */
-			speed_left = speed - rotate * REAR_TREAD_RT1 / 2.0;		/* m/s */
-			speed_right = speed + rotate * REAR_TREAD_RT1 / 2.0;		/* m/s */
+#define REAR_TREAD_RT2	(0.502)		/*!< �쓮�ւ̃g���b�h[m] */
+			speed_left = speed - rotate * REAR_TREAD_RT2 / 2.0;		/* m/s */
+			speed_right = speed + rotate * REAR_TREAD_RT2 / 2.0;		/* m/s */
 
-#define SPEED_COEFF_RT1 (311.111)	/*!< “à•”•Ï”‚Ö‚Ì•ÏŠ·ŒW” */
-			speed_left *= SPEED_COEFF_RT1;
-			speed_right *= SPEED_COEFF_RT1;
+#define SPEED_COEFF_RT2 (95.8904)	/*!< �����ϐ��ւ̕ϊ��W��(MOTOR_SLOWNESS * (MOTOR_POLES/2) / REAR_TIRE_RADIUS_M) */
+			speed_left *= SPEED_COEFF_RT2;
+			speed_right *= SPEED_COEFF_RT2;
 
 			if (rotate > 0.0)
 			{
 				fspeed = (int)speed_right;
 				fradiu = (int)(1000.0 * speed_left / speed_right) - 1000;
 			}
-			else if (rotate < 0.0) //editted: Ken
+			else
 			{
 				fspeed = (int)speed_left;
 				fradiu = 1000 - (int)(1000.0 * speed_right / speed_left);
 			}
-			else
+
+			if((rotate == 0.0)&&(speed == 0.0))
 			{
-				fspeed = (int)((speed_left+speed_right)/2);
+				fspeed = 0;
 				fradiu = 0;
 			}
 
-			if (fspeed >= 2000)
+			if (fspeed > 2000)
 			{
 				fprintf(stderr, "fspeed %d over 2000. Correct 2000\n", fspeed);
 				fspeed = 2000;
@@ -290,7 +282,7 @@ if (fd < 0) fprintf(stderr, "open %s error\n", receive_stock->port_);
 				fprintf(stderr, "fspeed %d under -2000. Correct -2000\n", fspeed);
 				fspeed = -2000;
 			}
-			if (fradiu >= 2000)
+			if (fradiu > 2000)
 			{
 				fprintf(stderr, "fradiu %d over 2000. Correct 2000\n", fradiu);
 				fradiu = 2000;
@@ -304,7 +296,7 @@ if (fd < 0) fprintf(stderr, "open %s error\n", receive_stock->port_);
 			fspeed += 2048;
 			fradiu += 2048;
 
-			/* UART‘—M */
+			/* UART���M */
 			sprintf(uart_send_buf, "fspeed%c%c%c%c\r\n",
 					((fspeed / 1000) % 10) + '0',
 					((fspeed / 100) % 10) + '0',
@@ -322,7 +314,7 @@ if (fd < 0) fprintf(stderr, "open %s error\n", receive_stock->port_);
 		}
 
 		uart_tmp_len = read(fd, uart_tmp_buf, UART_BUF_LEN);
-		if (uart_tmp_len >= 1)	/* UARTŽóM */
+		if (uart_tmp_len >= 1)	/* UART��M */
 		{
 			for(i=0;i<uart_tmp_len;i++)
 			{
@@ -365,10 +357,10 @@ if (fd < 0) fprintf(stderr, "open %s error\n", receive_stock->port_);
 						 */
 						pos = 2;
 						get_int(uart_receive_buf, &pos);
-//						get_int(uart_receive_buf, &pos);
+						get_int(uart_receive_buf, &pos);
 						msg.accel.linear.y = (double)get_int(uart_receive_buf, &pos) / -1000.0;	/* mm/s^2 -> m/s^2 */
 						get_int(uart_receive_buf, &pos);
-//						get_int(uart_receive_buf, &pos);
+						get_int(uart_receive_buf, &pos);
 						msg.accel.linear.x = (double)get_int(uart_receive_buf, &pos) / 1000.0;	/* mm/s^2 -> m/s^2 */
 						get_int(uart_receive_buf, &pos);
 						msg.accel.linear.z = (double)get_int(uart_receive_buf, &pos) / 1000.0;	/* mm/s^2 -> m/s^2 */
@@ -387,15 +379,7 @@ if (fd < 0) fprintf(stderr, "open %s error\n", receive_stock->port_);
 						msg.accel.angular.x = (double)get_int(uart_receive_buf, &pos) / 10000.0;	/* 0.0001rad/s -> rad/s */
 						msg.accel.angular.z = (double)get_int(uart_receive_buf, &pos) / 10000.0;	/* 0.0001rad/s -> rad/s */
 					}
-					else if ((uart_receive_buf[0] == 's') &&
-							 (uart_receive_buf[1] == 'f'))
-					{
-						/* Store values into RtSensor structure */
-						pos = 2;
-						latest_force_left = (double)get_int(uart_receive_buf, &pos) / 1000.0;	/* mN -> N */
-						latest_force_right = (double)get_int(uart_receive_buf, &pos) / 1000.0;	/* mN -> N */
-					}
-					//printf("%g %g %g %g %g %g %g %g %g %g\n", msg.velocity.linear.x, msg.velocity.angular.z, msg.handle.force.x, msg.handle.torque.z, msg.accel.linear.x, msg.accel.linear.y, msg.accel.linear.z, msg.accel.angular.x, msg.accel.angular.y, msg.accel.angular.z);
+					//printf("%g %g %g %g %g %g %g %g\n", msg.velocity.linear.x, msg.velocity.angular.z, msg.accel.linear.x, msg.accel.linear.y, msg.accel.linear.z, msg.accel.angular.x, msg.accel.angular.y, msg.accel.angular.z);
 
 					uart_receive_len = 0;
 				}
@@ -406,13 +390,43 @@ if (fd < 0) fprintf(stderr, "open %s error\n", receive_stock->port_);
 			}
 		}
 
+		if (wait_5sec_cnt >= 1)
+		{
+			wait_5sec_cnt--;
+
+			if (wait_5sec_cnt == 0)
+			{
+				/* UART���M */
+				strcpy(uart_send_buf, "setmode dbg rtw65371\r\n");
+				write3(fd, uart_send_buf, strlen(uart_send_buf));
+				strcpy(uart_send_buf, "fdrive1\r\n");
+				write3(fd, uart_send_buf, strlen(uart_send_buf));
+				strcpy(uart_send_buf, "fturn1\r\n");
+				write3(fd, uart_send_buf, strlen(uart_send_buf));
+				strcpy(uart_send_buf, "fspeed2048\r\n");
+				write3(fd, uart_send_buf, strlen(uart_send_buf));
+				strcpy(uart_send_buf, "fradiu2048\r\n");
+				write3(fd, uart_send_buf, strlen(uart_send_buf));
+				strcpy(uart_send_buf, "mtlr2\r\n");
+				write3(fd, uart_send_buf, strlen(uart_send_buf));
+				strcpy(uart_send_buf, "mtrr2\r\n");
+				write3(fd, uart_send_buf, strlen(uart_send_buf));
+				strcpy(uart_send_buf, "sar2\r\n");
+				write3(fd, uart_send_buf, strlen(uart_send_buf));
+				strcpy(uart_send_buf, "syr2\r\n");
+				write3(fd, uart_send_buf, strlen(uart_send_buf));
+
+				wait_5sec_cnt = WAIT_5SEC_CNT_MAX;
+			}
+		}
+
 		if (wait_1sec_cnt >= 1)
 		{
 			wait_1sec_cnt--;
 
 			if (wait_1sec_cnt == 0)
 			{
-				/* UART‘—M */
+				/* UART���M */
 				strcpy(uart_send_buf, "fspeed2048\r\n");
 				write3(fd, uart_send_buf, strlen(uart_send_buf));
 			}
@@ -426,13 +440,7 @@ if (fd < 0) fprintf(stderr, "open %s error\n", receive_stock->port_);
 				/* publish RtSensor structure */
 
 				msg.velocity.linear.x = (latest_speed_left + latest_speed_right) / 2.0;
-				msg.velocity.angular.z = (latest_speed_right - latest_speed_left) / REAR_TREAD_RT1;
-
-#define SENSOR_GAP_RT1	(0.16)		/*!< ˆ³—ÍƒZƒ“ƒTŠÔ‚Ì‹——£[m] */
-				msg.handle.force.x = (latest_force_left + latest_force_right) / 2.0;
-				msg.handle.torque.z = (latest_force_right - latest_force_left) / SENSOR_GAP_RT1;
-				msg.handleadj.force.x = msg.handle.force.x/20;
-				msg.handleadj.torque.z = msg.handle.torque.z/200;
+				msg.velocity.angular.z = (latest_speed_right - latest_speed_left) / REAR_TREAD_RT2;
 
 				/* Some variable may not be updated, but don't care */
 				receive_stock->pub_.publish(msg);
@@ -444,8 +452,8 @@ if (fd < 0) fprintf(stderr, "open %s error\n", receive_stock->port_);
 		usleep(WAIT_SLEEP_NS);	/* 10ms */
 	}
 
-	// strcpy(uart_send_buf, "fdrive0\r\n");
-	// write3(fd, uart_send_buf, strlen(uart_send_buf));
+	strcpy(uart_send_buf, "fdrive0\r\n");
+	write3(fd, uart_send_buf, strlen(uart_send_buf));
 	strcpy(uart_send_buf, "mtlr1\r\n");
 	write3(fd, uart_send_buf, strlen(uart_send_buf));
 	strcpy(uart_send_buf, "mtrr1\r\n");
@@ -453,8 +461,6 @@ if (fd < 0) fprintf(stderr, "open %s error\n", receive_stock->port_);
 	strcpy(uart_send_buf, "sar1\r\n");
 	write3(fd, uart_send_buf, strlen(uart_send_buf));
 	strcpy(uart_send_buf, "syr1\r\n");
-	write3(fd, uart_send_buf, strlen(uart_send_buf));
-	strcpy(uart_send_buf, "sfr1\r\n");
 	write3(fd, uart_send_buf, strlen(uart_send_buf));
 
 	/* UART close */
@@ -467,18 +473,19 @@ if (fd < 0) fprintf(stderr, "open %s error\n", receive_stock->port_);
 	return NULL;
 }
 
-class Rosrt_Rt1
+class Rosrt_Rt2
 {
 public:
-	Rosrt_Rt1() {
+	Rosrt_Rt2() {
 		ros::NodeHandle node;
 
 		ros::NodeHandle nh("~");
 		std::string port_param;
 		// Default value version
-		nh.param<std::string>("port", port_param, "/dev/rt1");
-		argsStock.sub_ = node.subscribe("cmd_vel", 1, &Rosrt_Rt1::twistCallback, this);
-		argsStock.pub_ = node.advertise<ros_start::Rt1Sensor>("rosrt_rt1", 1);
+		nh.param<std::string>("port", port_param, "/dev/ttyUSB0");
+
+		argsStock.sub_ = node.subscribe("cmd_vel", 1, &Rosrt_Rt2::twistCallback, this);
+		argsStock.pub_ = node.advertise<ros_start::Rt2Sensor>("rosrt_rt2", 1);
 		strncpy(argsStock.port_, port_param.c_str(), PORT_BUF_LEN);
 
 		task_end = 0;
@@ -494,7 +501,7 @@ public:
 		}
 	}
 
-	~Rosrt_Rt1() {
+	~Rosrt_Rt2() {
 
 		task_end = -1;
 
@@ -504,7 +511,7 @@ public:
 
 	void twistCallback(const geometry_msgs::Twist &twist_msg) {
 
-		printf("twistCallback\n");
+//		printf("twistCallback\n");
 		last_twist_buf[last_twist_cnt_w] = twist_msg;
 		last_twist_cnt_w++;
 		if (last_twist_cnt_w >= MAX_TWIST_CNT)
@@ -522,8 +529,8 @@ int main(int argc, char **argv)
 	last_twist_cnt_w = 0;
 	last_twist_cnt_r = 0;
 
-	ros::init(argc, argv, "rosrt_rt1");
-	Rosrt_Rt1 rosrt_rt1;
+	ros::init(argc, argv, "rosrt_rt2");
+	Rosrt_Rt2 rosrt_rt2;
 	ros::spin();
 }
 

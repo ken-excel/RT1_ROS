@@ -85,6 +85,7 @@ void RPLidar::process()
 	diff.difficulty.data[0] = dif[0];
 	diff.difficulty.data[1] = dif[1];
 	diff.difficulty.data[2] = dif[2];
+	std::cout<<"difL"<<dif[0]<<"difF"<<dif[1]<<"difR"<<dif[2]<<std::endl;
 	diff.header.stamp=ros::Time::now();
     difficulty_pub_.publish(diff);
 }

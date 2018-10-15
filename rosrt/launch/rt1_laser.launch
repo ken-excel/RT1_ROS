@@ -1,0 +1,4 @@
+<launch>
+	<include file="$(find rosrt)/launch/rt1.launch"/>
+	<include file="$(find rplidar_ros)/launch/angled_rplidar.launch"/>
+</launch>

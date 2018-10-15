@@ -32,11 +32,11 @@ private:
   	geometry_msgs::Twist output_cmd_vel_; //need remap
 
   	bool command_move;
-	double difL,difF,difR;
+	double difL, difF, difR;
 	double vel_lin, vel_rot;
-	double lin_handle, rot_handle,last_lin,last_rot; //last handle data for pushing, rotating
+	double lin_handle, rot_handle, last_lin, last_rot; //last handle data for pushing, rotating
 	double max_lin, max_rot, min_lin, min_rot;
-	double k_lin, k_rot;	
+	double k_lin, k_rot;
 
 	geometry_msgs::Twist velocity_compute();
 	void Callback_vel(const geometry_msgs::Twist &twist);

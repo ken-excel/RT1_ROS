@@ -22,11 +22,7 @@ RT1::RT1():
   min_rot = param_.min_rot;
   k_lin = param_.k_lin;
   k_rot = param_.k_rot;
-  difL = 0;
-  difF = 0;
-  difR = 0;
-  last_lin = 0;
-  last_rot = 0;
+     
 }
 
 geometry_msgs::Twist RT1::velocity_compute()
@@ -41,20 +37,21 @@ geometry_msgs::Twist RT1::velocity_compute()
     else{
         if(computed.linear.x>0)computed.linear.x*=fabs((difF-20)/20);
     }
-    if(computed.angular.z>0){
-    //Left
-        if(difL>20){
-            computed.angular.z=0;
-        }
-        else computed.angular.z*=fabs((difL-20)/20);
-    }
-    else if(computed.angular.z<0){
-    //Right
-        if(difR>20){
-            computed.angular.z=0;
-        }
-        else computed.angular.z*=fabs((difR-20)/20);
-    }
+    // if(computed.angular.z>0){
+    // //Left
+    //     if(difL>20){
+    //         computed.angular.z=0;
+    //     }
+    //     else computed.angular.z*=fabs((difL-20)/20);
+    // }
+    // else if(computed.angular.z<0){
+    // //Right
+    //     if(difR>20){
+    //         computed.angular.z=0;
+    //     }
+    //     else computed.angular.z*=fabs((difR-20)/20);
+    // }
+
     return computed;
 }
 
@@ -64,26 +61,27 @@ void RT1::Callback_sensor(const ros_start::Rt1Sensor &msg)
     rot_handle = msg.handle.torque.z; //handle data for pushing, rotating
     vel_lin=lin_handle*k_lin;
     vel_rot=rot_handle*k_rot;
+    
     if (fabs(vel_lin) < min_lin){
         vel_lin = 0;
     }
     else if (vel_lin > max_lin) vel_lin = max_lin;
     else if (vel_lin < -max_lin) vel_lin = -max_lin;
     
-    if (fabs(vel_rot) < min_rot){   
+    if (fabs(vel_rot) < min_rot){
         vel_rot = 0;
     }
     else if (vel_rot > max_rot) vel_rot = max_rot;
     else if (vel_rot < -max_rot) vel_rot = -max_rot;
 
-    if(fabs(vel_lin - last_lin) > (max_lin/4)){
-        if(vel_lin > last_lin) vel_lin = last_lin + (max_lin/4);
-        else vel_lin = last_lin - (max_lin/4);
+    if(fabs(vel_lin - last_lin)>(max_lin/4)){
+        if(vel_lin > last_lin) vel_lin = last_lin + max_lin/4;
+        else vel_lin = last_lin - max_lin/4;
     }
 
     if(fabs(vel_rot - last_rot) > (max_rot/4)){
-        if(vel_rot > last_rot) vel_rot = last_rot + (max_rot/4);
-        else if (vel_rot < last_rot) vel_rot = last_rot - (max_rot/4);
+        if(vel_rot > last_rot) vel_rot = last_rot + max_rot/4;
+        else vel_rot = last_rot - max_rot/4; 
     }
     last_lin = vel_lin;
     last_rot = vel_rot;
@@ -95,7 +93,6 @@ void RT1::Callback_difficulty(const ros_start::Difficulty &diff)
     difL=diff.difficulty.data[0];
     difF=diff.difficulty.data[1];
     difR=diff.difficulty.data[2];
-    std::cout<<difL<<" "<<difF<<" "<<difR<<std::endl;
 }
 
 void RT1::process()
