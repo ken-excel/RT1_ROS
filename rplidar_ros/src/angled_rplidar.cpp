@@ -58,9 +58,14 @@ double RPLidar::difficulty_cal(float deg, float R, int mode){
 	return difficulty;
 }
 
+void RPLidar::scanCompensator(const sensor_msgs::LaserScan::ConstPtr& scan) 
+{
+	//Assign scan data to position
+}
 
 void RPLidar::scanCallback(const sensor_msgs::LaserScan::ConstPtr& scan) 
 {
+	RPLidar::scanCompensator(scan);
 	difF=0;
 	difL=0;
 	difR=0;

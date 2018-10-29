@@ -12,6 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
   message_generation
   tf
+  rss
 )
 
 
@@ -37,7 +38,7 @@ include_directories(
 catkin_package(
  INCLUDE_DIRS 
  LIBRARIES 
- CATKIN_DEPENDS roscpp rospy std_msgs message_runtime geometry_msgs nav_msgs tf
+ CATKIN_DEPENDS roscpp rospy std_msgs message_runtime geometry_msgs nav_msgs tf rss
  DEPENDS
 )
 
@@ -48,6 +49,11 @@ target_link_libraries(rosrt_rt1 ${catkin_LIBRARIES})
 add_executable(rt1_node src/rt1_node.cpp src/rt1_con.cpp)
 add_dependencies(rt1_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(rt1_node ${catkin_LIBRARIES})
+
+add_executable(wifi_node src/wifi_node.cpp)
+add_dependencies(wifi_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(wifi_node ${catkin_LIBRARIES})
+
 
 add_executable(rt1_odom src/rt1_odom.cpp)
 add_dependencies(rt1_odom ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})

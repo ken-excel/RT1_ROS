@@ -92,7 +92,6 @@ static double get_double(char *buf, int *pos)
 	return ret;
 }
 
-
 static int get_int(char *buf, int *pos)
 {
 	char *ptr;
@@ -142,6 +141,42 @@ static int get_int(char *buf, int *pos)
 	return ret;
 }
 
+static int handle_check(char *buf, int *pos) //Added by Ken
+{
+	char *ptr;
+	int tmp_pos;
+	int count;
+
+	if ((buf == NULL) ||
+		(pos == NULL))
+	{
+		return 0.0;
+	}
+
+	count = 0;
+	tmp_pos = *pos;
+	ptr = &(buf[tmp_pos]);
+
+	if (*ptr == ',')
+	{
+		ptr++;
+		tmp_pos++;
+	}
+
+	for(;(*ptr!='\0')&&(*ptr!=',');ptr++)
+	{
+		fprintf(stderr, "%c\n", *ptr);
+		if (*ptr == 'C')
+		{
+			count++;
+		}
+		tmp_pos++;
+	}
+
+	*pos = tmp_pos;
+
+	return count;
+}
 
 static ssize_t write3(int fd, const void *buf, size_t count)
 {
@@ -179,6 +214,7 @@ static void *subTask(void *stock)
 	int fspeed, fradiu;
 	double latest_speed_left, latest_speed_right;
 	double latest_force_left, latest_force_right;
+	int handle_stat;
 	int fd;
 	int pos;
 	int i;
@@ -228,16 +264,16 @@ if (fd < 0) fprintf(stderr, "open %s error\n", receive_stock->port_);
 	// write3(fd, uart_send_buf, strlen(uart_send_buf));
 	// strcpy(uart_send_buf, "fradiu2048\r\n");
 	// write3(fd, uart_send_buf, strlen(uart_send_buf));
-	strcpy(uart_send_buf, "mtlr2\r\n");
-	write3(fd, uart_send_buf, strlen(uart_send_buf));
-	strcpy(uart_send_buf, "mtrr2\r\n");
-	write3(fd, uart_send_buf, strlen(uart_send_buf));
-	strcpy(uart_send_buf, "sar2\r\n");
-	write3(fd, uart_send_buf, strlen(uart_send_buf));
-	strcpy(uart_send_buf, "syr2\r\n");
-	write3(fd, uart_send_buf, strlen(uart_send_buf));
-	strcpy(uart_send_buf, "sfr2\r\n");
-	write3(fd, uart_send_buf, strlen(uart_send_buf));
+	// strcpy(uart_send_buf, "mtlr2\r\n");
+	// write3(fd, uart_send_buf, strlen(uart_send_buf));
+	// strcpy(uart_send_buf, "mtrr2\r\n");
+	// write3(fd, uart_send_buf, strlen(uart_send_buf));
+	// strcpy(uart_send_buf, "sar2\r\n");
+	// write3(fd, uart_send_buf, strlen(uart_send_buf));
+	// strcpy(uart_send_buf, "syr2\r\n");
+	// write3(fd, uart_send_buf, strlen(uart_send_buf));
+	// strcpy(uart_send_buf, "sfr2\r\n");
+	// write3(fd, uart_send_buf, strlen(uart_send_buf));
 
 	wait_100msec_cnt = WAIT_100MSEC_CNT_MAX;
 	wait_1sec_cnt = 0;
@@ -305,19 +341,20 @@ if (fd < 0) fprintf(stderr, "open %s error\n", receive_stock->port_);
 			fradiu += 2048;
 
 			/* UART‘—M */
-			sprintf(uart_send_buf, "fspeed%c%c%c%c\r\n",
-					((fspeed / 1000) % 10) + '0',
-					((fspeed / 100) % 10) + '0',
-					((fspeed / 10) % 10) + '0',
-					((fspeed / 1) % 10) + '0');
-			write3(fd, uart_send_buf, strlen(uart_send_buf));
-			sprintf(uart_send_buf, "fradiu%c%c%c%c\r\n",
-					((fradiu / 1000) % 10) + '0',
-					((fradiu / 100) % 10) + '0',
-					((fradiu / 10) % 10) + '0',
-					((fradiu / 1) % 10) + '0');
-			write3(fd, uart_send_buf, strlen(uart_send_buf));
-
+			if (handle_stat == 2){
+				sprintf(uart_send_buf, "fspeed%c%c%c%c\r\n",
+						((fspeed / 1000) % 10) + '0',
+						((fspeed / 100) % 10) + '0',
+						((fspeed / 10) % 10) + '0',
+						((fspeed / 1) % 10) + '0');
+				write3(fd, uart_send_buf, strlen(uart_send_buf));
+				sprintf(uart_send_buf, "fradiu%c%c%c%c\r\n",
+						((fradiu / 1000) % 10) + '0',
+						((fradiu / 100) % 10) + '0',
+						((fradiu / 10) % 10) + '0',
+						((fradiu / 1) % 10) + '0');
+				write3(fd, uart_send_buf, strlen(uart_send_buf));
+			}
 			wait_1sec_cnt = WAIT_1SEC_CNT_MAX;	/* Set counter to stop RT.1 after 1 sec. */
 		}
 
@@ -396,6 +433,18 @@ if (fd < 0) fprintf(stderr, "open %s error\n", receive_stock->port_);
 						latest_force_right = (double)get_int(uart_receive_buf, &pos) / 1000.0;	/* mN -> N */
 					}
 					//printf("%g %g %g %g %g %g %g %g %g %g\n", msg.velocity.linear.x, msg.velocity.angular.z, msg.handle.force.x, msg.handle.torque.z, msg.accel.linear.x, msg.accel.linear.y, msg.accel.linear.z, msg.accel.angular.x, msg.accel.angular.y, msg.accel.angular.z);
+					else if ((uart_receive_buf[0] == 's') &&
+							 (uart_receive_buf[1] == 'h'))
+					{
+						/* Store values into RtSensor structure */
+						pos = 2;
+						handle_stat = get_int(uart_receive_buf, &pos);
+						handle_stat = get_int(uart_receive_buf, &pos);
+						handle_stat = get_int(uart_receive_buf, &pos);
+						handle_stat = get_int(uart_receive_buf, &pos);
+						handle_stat = handle_check(uart_receive_buf, &pos); //get handle
+						fprintf(stderr, "Handle:%d\n", handle_stat);
+					}
 
 					uart_receive_len = 0;
 				}

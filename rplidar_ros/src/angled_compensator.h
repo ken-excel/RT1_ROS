@@ -1,13 +1,11 @@
-#ifndef _ANG_RPLIDAR_H_
-#define _ANG_RPLIDAR_H_
+#ifndef _ANG_COM_H_
+#define _ANG_COM_H_
 
 #include "ros/ros.h"
 #include "std_msgs/String.h"
 #include "iostream"
 #include "sensor_msgs/LaserScan.h"
-#include "geometry_msgs/Vector3Stamped.h"
 #include "rplidar_param.h"
-#include "rplidar_ros/Difficulty.h"
 
 class RPLidar
 {
@@ -30,7 +28,6 @@ private:
 
 	double difficulty_cal(float deg, float R, int mode);
 	void scanCallback(const sensor_msgs::LaserScan::ConstPtr& scan);
-	void scanCompensator(const sensor_msgs::LaserScan::ConstPtr& scan);
 };
 
 #endif
