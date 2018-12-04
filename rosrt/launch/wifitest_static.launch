@@ -1,0 +1,5 @@
+<launch>
+	<node name="wifi_node"           pkg="ros_start"  type="rosrt_rt1"/>
+	<node name="loc_node"		 pkg="ros_start"  type="rt1_node" output="screen"/>
+	
+</launch>

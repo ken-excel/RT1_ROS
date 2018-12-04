@@ -1,10 +1,9 @@
-# Package
+# Package Summary
 
-Robot Assist Walker RT1 
+rosrt_rt1 is a packege of ROS node to manipulate RT.works' robot assist walker RT.1.
+This explains how to use it.
 
-ros_start is a package of ROS node to manipulate RT.works' robot assist walker RT1
-
-RT1 is programmed to do obstacle avoiding, passive intuitive braking system. 
+**NOTE:RT.works does not support using RT.1 with ROS. This may break the product and it is not covered by warranty.**
 
 # Preparation
 
@@ -27,11 +26,25 @@ PIN #2 of J1102(TXD pulled up to 3.3v) --- PIN #5(YELLOW) of Converter
 
 PIN #3 of J1102(GND) --- PIN #1(BLACK) of Converder
 
+## Software
+
+get source codes from Github repository(https://github.com/alexandrokatayama/rosrt_rt1.git )
+
+File	|Explanation
+--	|--
+src/rosrt_rt1.cpp | source code of ROS node.
+msg/Rt1Sensor.msg | definition of message from the node.
+script/sample.py  | sample script to send command to the node.
+
+Declare the src/rosrt_rt1.cpp as executable in CMakeLists.txt.
+Declare the msg/Rt1Sensor.msg as message in CMakeLists.txt.
+Then build them in the workspace.
+
 # Operation
 
-## Power up the RT.2
+## Power up the RT.1
 
-Switch on the power on the control box. Press power button on the panel.
+Push power button on the control box.
 
 ## On the PC
 
@@ -39,21 +52,19 @@ Switch on the power on the control box. Press power button on the panel.
 	$ roscore
 ### Set up the serial port
 ```
-$ stty -F /dev/ttyUSB0 raw -echo speed 115200
+# stty -F /dev/ttyUSB0 raw -echo speed 115200
 ```
-if the udev rule is already set use:
-```
-$ stty -F /dev/rt1 raw -echo speed 115200
-```
+If you need to use another port like /dev/ttyUSB1, edit the source code of the node.
 ### Start the node
 ```
 $ rosrun ros_start rosrt_rt1
 ```
-### Start controller
+### Start monitoring sensor values
 ```
-$ rosrun ros_start rt1_con
+$ rostopic echo /rosrt_rt1
 ```
-### Launch file (node, controller, odometry, rplidar)
+### Start script
 ```
-$ roslaunch ros_start rt1.launch
+$ rosrun ros_start sample.py /mobile_base/commands/torque:=/cmd_tor
 ```
+Then RT.1 tries to move forward, backward, and turn left and right.

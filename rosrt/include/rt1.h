@@ -12,6 +12,7 @@
 #include <geometry_msgs/Twist.h>
 #include "ros_start/Difficulty.h"
 #include "ros_start/Rt1Sensor.h"
+#include <geometry_msgs/Wrench.h>
 
 class RT1
 {
@@ -26,14 +27,16 @@ private:
 	RT1Param param_;
 	ros::Subscriber obstacle_sub_; //obstacle data - inprogress 
 	ros::Publisher  cmd_vel_pub_ ; //cmd vel
+	ros::Publisher  cmd_tor_pub_ ; //cmd tor
 	ros::Subscriber sensor_sub_; //sensor sub
 	nav_msgs::Odometry odom_;
-  	geometry_msgs::Twist input_cmd_vel_; //need remap
   	geometry_msgs::Twist output_cmd_vel_; //need remap
+  	geometry_msgs::Wrench output_cmd_tor_;
 
   	bool command_move;
 	double difL, difF, difR;
 	double vel_lin, vel_rot;
+	double force, torque;
 	double lin_handle, rot_handle, last_lin, last_rot; //last handle data for pushing, rotating
 	double max_lin, max_rot, min_lin, min_rot;
 	double k_lin, k_rot;

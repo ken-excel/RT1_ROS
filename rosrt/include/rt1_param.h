@@ -12,12 +12,18 @@ public:
 
   RT1Param()
   {
-    k_lin = 0.05;
-    k_rot = 0.00667;
-    min_lin = 0.1;
-    min_rot = 0.2;
-    max_lin = 1.5;
-    max_rot = 2;
+    k_lin = 1;
+    k_rot = 0.01;
+    min_lin = 1;
+    min_rot = 0.1;
+    max_lin = 30;
+    max_rot = 3.5;
+    // k_lin = 0.05;
+    // k_rot = 0.00667;
+    // min_lin = 0.1;
+    // min_rot = 0.2;
+    // max_lin = 1.5;
+    // max_rot = 2;
   }
 
   bool load(const ros::NodeHandle &nh)

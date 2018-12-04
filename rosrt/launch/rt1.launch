@@ -2,5 +2,4 @@
     <!-- RT1 -->
 	<node name="rosrt_rt1"           pkg="ros_start"  type="rosrt_rt1"/>
 	<node name="rt1_node"		 pkg="ros_start"  type="rt1_node" output="screen"/>	
-	<param name="max_lin" 		 value="2.3"/>
 </launch>

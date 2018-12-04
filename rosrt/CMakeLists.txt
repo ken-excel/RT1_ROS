@@ -27,7 +27,7 @@ add_message_files(
 generate_messages(
   DEPENDENCIES 
   std_msgs
-  geometry_msgs
+  geometry_msgs	
 )
 
 include_directories(
@@ -54,6 +54,13 @@ add_executable(wifi_node src/wifi_node.cpp)
 add_dependencies(wifi_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(wifi_node ${catkin_LIBRARIES})
 
+add_executable(loc_node src/location_node.cpp)
+add_dependencies(loc_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(loc_node ${catkin_LIBRARIES})
+
+add_executable(find_loc src/find_location.cpp)
+add_dependencies(find_loc ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(find_loc ${catkin_LIBRARIES})
 
 add_executable(rt1_odom src/rt1_odom.cpp)
 add_dependencies(rt1_odom ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})

@@ -15,6 +15,7 @@ RT1::RT1():
   //set_mode_srv_  = nh_.advertiseService("set_mode", &RT1::SetModeSrv, this);
   obstacle_sub_ = nh_.subscribe("/rt1_con/difficulty", 1, &RT1::Callback_difficulty, this);
   cmd_vel_pub_  = nh_.advertise<geometry_msgs::Twist>("/cmd_vel", 1);
+  cmd_tor_pub_ = nh_.advertise<geometry_msgs::Wrench>("/cmd_tor", 1);
   sensor_sub_ = nh_.subscribe("/rosrt_rt1", 1000, &RT1::Callback_sensor,this);
   max_lin = param_.max_lin;
   max_rot = param_.max_rot;
@@ -62,6 +63,8 @@ void RT1::Callback_sensor(const ros_start::Rt1Sensor &msg)
 {
     lin_handle = msg.handle.force.x;
     rot_handle = msg.handle.torque.z; //handle data for pushing, rotating
+    
+    /* cmd_vel
     vel_lin=lin_handle*k_lin;
     vel_rot=rot_handle*k_rot;
     if (fabs(vel_lin) < min_lin){
@@ -88,6 +91,35 @@ void RT1::Callback_sensor(const ros_start::Rt1Sensor &msg)
     last_lin = vel_lin;
     last_rot = vel_rot;
     command_move=true;
+    */
+
+    //cmd_tor
+    force=lin_handle*k_lin;
+    torque=rot_handle*k_rot;
+    if (fabs(force) < min_lin){
+        force = 0;
+    }
+    else if (force > max_lin) force = max_lin;
+    else if (force < -max_lin) force = -max_lin;
+    
+    if (fabs(vel_rot) < min_rot){   
+        torque = 0;
+    }
+    else if (torque > max_rot) torque = max_rot;
+    else if (torque < -max_rot) torque = -max_rot;
+
+    // if(fabs(force - last_lin) > (max_lin/4)){
+    //     if(force > last_lin) force = last_lin + (max_lin/4);
+    //     else force = last_lin - (max_lin/4);
+    // }
+
+    // if(fabs(torque - last_rot) > (max_rot/4)){
+    //     if(torque > last_rot) torque = last_rot + (max_rot/4);
+    //     else if (torque < last_rot) torque = last_rot - (max_rot/4);
+    // }
+    // last_lin = force;
+    // last_rot = torque;
+    command_move=true;
 }
 
 void RT1::Callback_difficulty(const ros_start::Difficulty &diff)
@@ -101,15 +133,21 @@ void RT1::Callback_difficulty(const ros_start::Difficulty &diff)
 void RT1::process()
 {
     if (command_move){
-        output_cmd_vel_ = velocity_compute();
-        cmd_vel_pub_.publish(output_cmd_vel_);
+        //output_cmd_vel_ = velocity_compute();
+        //cmd_vel_pub_.publish(output_cmd_vel_);
+        output_cmd_tor_.force.x = force;
+        output_cmd_tor_.torque.z = torque;
+        cmd_tor_pub_.publish(output_cmd_tor_);
         command_move=false;
     }
 }
 
 void RT1::shutdown()
 {
-    output_cmd_vel_.angular.z = 0;
-    output_cmd_vel_.linear.x = 0; 
-    cmd_vel_pub_.publish(output_cmd_vel_);
+    // output_cmd_vel_.angular.z = 0;
+    // output_cmd_vel_.linear.x = 0; 
+    // cmd_vel_pub_.publish(output_cmd_vel_);
+    output_cmd_tor_.force.x = 0;
+    output_cmd_tor_.torque.z = 0;
+    cmd_tor_pub_.publish(output_cmd_tor_);
 }
