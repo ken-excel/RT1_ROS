@@ -1,0 +1,4 @@
+<launch>
+	<include file="$(find ros_start)/launch/rt1.launch"/>
+	<include file="$(find urg_node)/launch/urg_lidar.launch"/>
+</launch>

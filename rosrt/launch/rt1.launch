@@ -1,5 +1,7 @@
 <launch>
+	<!--node pkg="ros_start" 		 type="init.sh" name="system_init" output="screen" launch-prefix="sudo"/-->
     <!-- RT1 -->
 	<node name="rosrt_rt1"           pkg="ros_start"  type="rosrt_rt1"/>
-	<node name="rt1_node"		 pkg="ros_start"  type="rt1_node" output="screen"/>	
+	<node name="rt1_node"		 pkg="ros_start"  type="rt1_node" output="screen"/>
+	<node name="rt1_odom"		 pkg="ros_start"  type="rt1_odom"/>
 </launch>

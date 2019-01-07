@@ -1,0 +1,22 @@
+<launch>
+  <arg name="map_file" default="lab.yaml"/>
+  <arg name="launch_rviz" default="true"/>
+  <arg name="with_camera" default="false"/>
+
+  <!-- Map server -->
+  <node name="map_server" pkg="map_server" type="map_server" args="$(find rt1_navigation)/map/lab.yaml" />
+
+  <!-- AMCL -->
+  <include file="$(find rt1_navigation)/launch/include/laser_amcl.launch.xml"/>
+
+  <!-- Move base -->
+  <include file="$(find rt1_navigation)/launch/include/move_base.launch.xml"/>
+
+  <!-- Rviz -->
+  <include if="$(arg launch_rviz)" file="$(find rt1_navigation)/launch/rviz.launch"/>
+
+  <node if="$(arg with_camera)" name="image_transport" pkg="image_transport" type="republish" args="compressed in:=/raspicam_node/image raw out:=/camera/image_raw"/>
+
+
+</launch>
+

@@ -14,13 +14,14 @@ locationFind::locationFind():
 
 void locationFind::rssRead(const ros_start::RssAvg &rss)
 {
-	if (mode == "moving")
+	if (mode == "moving" || mode == "old")
 	{
 		cout<<mode<<endl;
 		cout<<instance<<endl;
 		if(instance<runtime) outputFile<<instance<<endl;
 		for(int i=0; i<db.size(); i++){
-			db[i].rms = locationFind::rssComp(db[i],rss);
+			if (mode == "old") db[i].rms = locationFind::rssCompOld(db[i],rss);
+			else db[i].rms = locationFind::rssComp(db[i],rss);
 			cout<<db[i].loc<<" "<<db[i].rms<<endl;
 			if (instance<runtime)outputFile<<db[i].loc<<db[i].rms<<endl;
 		}
@@ -94,7 +95,7 @@ void locationFind::rssStaticRead(const ros_start::PointRss &rss_loc)
 	}
 }
 
-double locationFind::rssComp(database rss_db, ros_start::RssAvg rss_in)
+double locationFind::rssCompOld(database rss_db, ros_start::RssAvg rss_in)
 {
 	bool matching = false;
 	double root;
@@ -119,19 +120,69 @@ double locationFind::rssComp(database rss_db, ros_start::RssAvg rss_in)
 				cout << "Criteria not found" << endl;
 				return 1;
 			}
-			if (rss_db.loc == "L1" || rss_db.loc == "L2") cout<<rss_db.ssid[i].c_str()<<root<<endl;
+			//cout<< rss_in.rss[i].name << " | " << root << endl;
+			//if (rss_db.loc == "L1" || rss_db.loc == "L2") cout<<rss_db.ssid[i].c_str()<<root<<endl;	
+			sum += root;
+			count++;
+			matching = false;
 		}
 		else
 		{
-			if (criteria == "rss") root = pow(fabs(rss_db.rss[i])+fabs(min_rss),2);
-			else if (criteria == "dist") root = pow(rss_db.rss[i]-min_dist,2);
+			//No Min_rss for new algorithm, non-matching rss is overlooked
+			// if (criteria == "rss") root = pow(fabs(rss_db.rss[i])+fabs(min_rss),2);
+			// else if (criteria == "dist") root = pow(rss_db.rss[i]-min_dist,2);
+			// else{
+			// 	cout << "Criteria not found" << endl;
+			// 	return 1;
+			// }
+		}
+	}
+	double avg = sum/count;
+	rms = sqrt(avg);
+	return rms;
+}
+
+double locationFind::rssComp(database rss_db, ros_start::RssAvg rss_in)
+{
+	bool matching = false;
+	double root;
+	double sum;
+	double rms;
+	int count;
+	for (int i=0; i<rss_in.rss.size(); i++) //(int i=0; i<rss_db.ssid.size(); i++)
+	{
+		int j;
+		for(j=0; j<rss_db.ssid.size(); j++) //for(j=0; j<rss_in.rss.size(); j++)
+		{
+			if(strcmp(rss_in.rss[i].name.c_str(),rss_db.ssid[j].c_str()) == 0){ //strcmp(rss_in.rss[j].name.c_str(),rss_db.ssid[i].c_str()) == 0){
+				matching = true;
+				break;
+			} 
+		}
+		if (matching)
+		{
+			if (criteria == "rss") root = pow(fabs(rss_in.rss[i].rss)-fabs(rss_db.rss[j]),2); //(criteria == "rss") root = pow(fabs(rss_in.rss[j].rss)-fabs(rss_db.rss[i]),2);
+			else if (criteria == "dist") root = pow(rss_in.rss[i].dist-rss_db.rss[j],2); //(criteria == "dist") root = pow(rss_in.rss[j].dist-rss_db.rss[i],2);
 			else{
 				cout << "Criteria not found" << endl;
 				return 1;
 			}
+			//cout<< rss_in.rss[i].name << " | " << root << endl;
+			if (rss_db.loc == "L1" || rss_db.loc == "L2") cout<<rss_db.ssid[j].c_str()<<root<<endl;	
+			sum += root;
+			count++;
+			matching = false;
 		}
-		sum += root;
-		count++;
+		else
+		{
+			//No Min_rss for new algorithm, non-matching rss is overlooked
+			// if (criteria == "rss") root = pow(fabs(rss_db.rss[i])+fabs(min_rss),2);
+			// else if (criteria == "dist") root = pow(rss_db.rss[i]-min_dist,2);
+			// else{
+			// 	cout << "Criteria not found" << endl;
+			// 	return 1;
+			// }
+		}
 	}
 	double avg = sum/count;
 	rms = sqrt(avg);

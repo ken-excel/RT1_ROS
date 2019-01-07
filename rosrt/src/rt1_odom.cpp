@@ -18,6 +18,7 @@ int main(int argc, char** argv){
   ros::NodeHandle n;
   ros::Publisher odom_pub = n.advertise<nav_msgs::Odometry>("odom", 50);
   ros::Subscriber sensor_sub = n.subscribe("/rosrt_rt1", 1000, Callback_sensor); 
+  ros::Subscriber scanmatcher_sub = n.subscribe("/scanmatch_odom", 1000, Callback_sensor); 
   tf::TransformBroadcaster odom_broadcaster;
 
   double x = 0.0;

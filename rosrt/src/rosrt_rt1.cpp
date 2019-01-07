@@ -1,5 +1,8 @@
+//RT1 Force con (cmd_tor) with handle
+//RT1 Velocity con (cmd_vel) for amcl
 #include <ros/ros.h>
 #include <geometry_msgs/Wrench.h>
+#include <geometry_msgs/Twist.h>
 #include "ros_start/Rt1Sensor.h"
 #include <pthread.h>
 #include <std_msgs/String.h>
@@ -8,14 +11,25 @@
 #include <sys/types.h>
 #include "version.h"
 
+//cmd_tor
 #define MAX_WRENCH_CNT (16)
 static geometry_msgs::Wrench last_wrench_buf[MAX_WRENCH_CNT];
 static unsigned int last_wrench_cnt_w;
 static unsigned int last_wrench_cnt_r;
+
+//cmd_vel
+#define MAX_TWIST_CNT (16)
+static geometry_msgs::Twist last_twist_buf[MAX_TWIST_CNT];
+static unsigned int last_twist_cnt_w;
+static unsigned int last_twist_cnt_r;
+
 static int task_end;
 
+bool tor_mode, vel_mode;
+
 typedef struct{
-	ros::Subscriber sub_;
+	ros::Subscriber sub_vel_;
+	ros::Subscriber sub_tor_;
 	ros::Publisher pub_;
 #define PORT_BUF_LEN (32)
 	char port_[PORT_BUF_LEN];
@@ -167,7 +181,7 @@ static int handle_check(char *buf, int *pos) //Added by Ken
 
 	for(;(*ptr!='\0')&&(*ptr!=',');ptr++)
 	{
-		fprintf(stderr, "%c\n", *ptr);
+		//fprintf(stderr, "%c\n", *ptr);
 		if (*ptr == 'C')
 		{
 			count++;
@@ -211,9 +225,10 @@ static void *subTask(void *stock)
 	char uart_tmp_buf[UART_BUF_LEN];
 	int uart_tmp_len;
 	ros_start::Rt1Sensor msg;
-	double force, rotate;
+	double speed, force, rotate;
 	double force_left, force_right;
-	int ftorqu, fradiu;
+	double speed_left, speed_right;
+	int fspeed, ftorqu, fradiu;
 	double latest_speed_left, latest_speed_right;
 	double latest_force_left, latest_force_right;
 	int handle_stat; //Added by Ken
@@ -285,31 +300,49 @@ if (fd < 0) fprintf(stderr, "open %s error\n", receive_stock->port_);
 	{
 		if (last_wrench_cnt_w != last_wrench_cnt_r)
 		{
-			force = last_wrench_buf[last_wrench_cnt_r].force.x;		/* N */
-			rotate = last_wrench_buf[last_wrench_cnt_r].torque.z;	/* N.m */
-			printf("wrench %g %g\n", force, rotate);
+			if (tor_mode){ //tor_mode	
+				force = last_wrench_buf[last_wrench_cnt_r].force.x;		/* N */
+				rotate = last_wrench_buf[last_wrench_cnt_r].torque.z;	/* N.m */
+			}
+			else{ //not tor mode
+				if(vel_mode){	
+					speed = last_twist_buf[last_twist_cnt_r].linear.x;
+					rotate = last_twist_buf[last_twist_cnt_r].angular.z;	/* rad/s */
+				}
+			}
+			//printf("wrench %g %g\n", force, rotate);
 
+			last_twist_cnt_r++;
 			last_wrench_cnt_r++;
 			if (last_wrench_cnt_r >= MAX_WRENCH_CNT)
 			{
 				last_wrench_cnt_r = 0;
 			}
 
-			if((rotate == 0.0)&&(force == 0.0))
+			if (last_twist_cnt_r >= MAX_TWIST_CNT)
 			{
-				ftorqu = 0;
-				fradiu = 0;
+				last_twist_cnt_r = 0;
 			}
-			else
-			{
-#define REAR_TREAD_RT1	(0.42)		/*!< ?쓮?ւ̃g???b?h[m] */
+
+		#define REAR_TREAD_RT1	(0.42)		/*!< ?쓮?ւ̃g???b?h[m] */
+			if (tor_mode){
 				force_left = force / 2.0 - rotate / REAR_TREAD_RT1;		/* N */
 				force_right = force / 2.0 + rotate / REAR_TREAD_RT1;	/* N */
+			}
+			else{
+				speed_left = speed - rotate * REAR_TREAD_RT1 / 2.0;		/* m/s */
+				speed_right = speed + rotate * REAR_TREAD_RT1 / 2.0;		/* m/s */
+			}
 
-#define FORCE_COEFF_RT1 (69.66)		/*!< ????ϐ??ւ̕ϊ??W?? */
-				force_left *= FORCE_COEFF_RT1;	/* mA */
-				force_right *= FORCE_COEFF_RT1;	/* mA */
+		#define FORCE_COEFF_RT1 (69.66)		/*!< ????ϐ??ւ̕ϊ??W?? */
+		#define SPEED_COEFF_RT1 (311.111)	/*!< “à•”•Ï”‚Ö‚Ì•ÏŠ·ŒW” */
+			force_left *= FORCE_COEFF_RT1;	/* mA */
+			force_right *= FORCE_COEFF_RT1;	/* mA */
+			speed_left *= SPEED_COEFF_RT1;
+			speed_right *= SPEED_COEFF_RT1;
 
+			if (tor_mode) //if force mode is on
+			{
 				if (rotate > 0.0)
 				{
 					ftorqu = (int)force_right;
@@ -321,13 +354,26 @@ if (fd < 0) fprintf(stderr, "open %s error\n", receive_stock->port_);
 					fradiu = 1000 - (int)(1000.0 * force_right / force_left);
 				}
 			}
+			else //if force mode is off, use velocity
+			{
+				if (rotate > 0.0)
+				{
+					fspeed = (int)speed_right;
+					fradiu = (int)(1000.0 * speed_left / speed_right) - 1000;
+				}
+				else
+				{
+					fspeed = (int)speed_left;
+					fradiu = 1000 - (int)(1000.0 * speed_right / speed_left);
+				}
+			}
 
 			if (ftorqu > 2000)
 			{
 				fprintf(stderr, "ftorqu %d over 2000. Correct 2000\n", ftorqu);
 				ftorqu = 2000;
 			}
-			if (ftorqu < -2000)
+			else if (ftorqu < -2000)
 			{
 				fprintf(stderr, "ftorqu %d under -2000. Correct -2000\n", ftorqu);
 				ftorqu = -2000;
@@ -337,10 +383,20 @@ if (fd < 0) fprintf(stderr, "open %s error\n", receive_stock->port_);
 				fprintf(stderr, "fradiu %d over 2000. Correct 2000\n", fradiu);
 				fradiu = 2000;
 			}
-			if (fradiu < -2000)
+			else if (fradiu < -2000)
 			{
 				fprintf(stderr, "fradiu %d under -2000. Correct -2000\n", fradiu);
 				fradiu = -2000;
+			}
+			if (fspeed >= 2000)
+			{
+				fprintf(stderr, "fspeed %d over 2000. Correct 2000\n", fspeed);
+				fspeed = 2000;
+			}
+			else if (fspeed < -2000)
+			{
+				fprintf(stderr, "fspeed %d under -2000. Correct -2000\n", fspeed);
+				fspeed = -2000;
 			}
 
 			if (ftorqu == 0)
@@ -349,22 +405,47 @@ if (fd < 0) fprintf(stderr, "open %s error\n", receive_stock->port_);
 				ftorqu = 1;
 			}
 
+			fspeed += 2048;
 			ftorqu += 2048;
 			fradiu += 2048;
 
-			/* UART???M */
-			if (handle_stat == 2){
-				sprintf(uart_send_buf, "ftorqu%c%c%c%c\r\n",
-						((ftorqu / 1000) % 10) + '0',
-						((ftorqu / 100) % 10) + '0',
-						((ftorqu / 10) % 10) + '0',
-						((ftorqu / 1) % 10) + '0');
+			if (tor_mode)
+			{
+				/* UART???M */
+				if (handle_stat == 2){
+					sprintf(uart_send_buf, "ftorqu%c%c%c%c\r\n",
+							((ftorqu / 1000) % 10) + '0',
+							((ftorqu / 100) % 10) + '0',
+							((ftorqu / 10) % 10) + '0',
+							((ftorqu / 1) % 10) + '0');
+					write3(fd, uart_send_buf, strlen(uart_send_buf));
+					sprintf(uart_send_buf, "fradiu%c%c%c%c\r\n",
+							((fradiu / 1000) % 10) + '0',
+							((fradiu / 100) % 10) + '0',
+							((fradiu / 10) % 10) + '0',
+							((fradiu / 1) % 10) + '0');
+					write3(fd, uart_send_buf, strlen(uart_send_buf));
+				}
+				else{
+					strcpy(uart_send_buf, "ftorqu2048\r\n");
+					write3(fd, uart_send_buf, strlen(uart_send_buf));
+					strcpy(uart_send_buf, "fradiu2048\r\n");
+					write3(fd, uart_send_buf, strlen(uart_send_buf));
+				}
+			}
+			else
+			{
+				sprintf(uart_send_buf, "fspeed%c%c%c%c\r\n",
+					((fspeed / 1000) % 10) + '0',
+					((fspeed / 100) % 10) + '0',
+					((fspeed / 10) % 10) + '0',
+					((fspeed / 1) % 10) + '0');
 				write3(fd, uart_send_buf, strlen(uart_send_buf));
 				sprintf(uart_send_buf, "fradiu%c%c%c%c\r\n",
-						((fradiu / 1000) % 10) + '0',
-						((fradiu / 100) % 10) + '0',
-						((fradiu / 10) % 10) + '0',
-						((fradiu / 1) % 10) + '0');
+					((fradiu / 1000) % 10) + '0',
+					((fradiu / 100) % 10) + '0',
+					((fradiu / 10) % 10) + '0',
+					((fradiu / 1) % 10) + '0');
 				write3(fd, uart_send_buf, strlen(uart_send_buf));
 			}
 			wait_1sec_cnt = WAIT_1SEC_CNT_MAX;	/* Set counter to stop RT.1 after 1 sec. */
@@ -456,7 +537,7 @@ if (fd < 0) fprintf(stderr, "open %s error\n", receive_stock->port_);
 						handle_stat = get_int(uart_receive_buf, &pos);
 						handle_stat = get_int(uart_receive_buf, &pos);
 						handle_stat = handle_check(uart_receive_buf, &pos); //get handle
-						fprintf(stderr, "Handle:%d\n", handle_stat);
+						//fprintf(stderr, "Handle:%d\n", handle_stat);
 					}
 
 					uart_receive_len = 0;
@@ -526,6 +607,9 @@ if (fd < 0) fprintf(stderr, "open %s error\n", receive_stock->port_);
 	pthread_detach( (pthread_t)id );
 	pthread_exit(&ret);
 
+	tor_mode = false;
+	vel_mode = false;
+
 	return NULL;
 }
 
@@ -540,7 +624,8 @@ public:
 		// Default value version
 		nh.param<std::string>("port", port_param, "/dev/rt1");
 
-		argsStock.sub_ = node.subscribe("cmd_tor", 1, &Rosrt_Rt1::wrenchCallback, this);
+		argsStock.sub_tor_ = node.subscribe("cmd_tor", 1, &Rosrt_Rt1::wrenchCallback, this);
+		argsStock.sub_vel_ = node.subscribe("cmd_vel", 1, &Rosrt_Rt1::twistCallback, this);
 		argsStock.pub_ = node.advertise<ros_start::Rt1Sensor>("rosrt_rt1", 1);
 		strncpy(argsStock.port_, port_param.c_str(), PORT_BUF_LEN);
 
@@ -574,6 +659,19 @@ public:
 		{
 			last_wrench_cnt_w = 0;
 		}
+		tor_mode = true;
+	}
+
+	void twistCallback(const geometry_msgs::Twist &twist_msg) {
+
+		//printf("twistCallback\n");
+		last_twist_buf[last_twist_cnt_w] = twist_msg;
+		last_twist_cnt_w++;
+		if (last_twist_cnt_w >= MAX_TWIST_CNT)
+		{
+			last_twist_cnt_w = 0;
+		}
+		vel_mode = true;
 	}
 
 private:
@@ -586,6 +684,9 @@ int main(int argc, char **argv)
 
 	last_wrench_cnt_w = 0;
 	last_wrench_cnt_r = 0;
+
+	last_twist_cnt_w = 0;
+	last_twist_cnt_r = 0;
 
 	ros::init(argc, argv, "rosrt_rt1");
 	Rosrt_Rt1 rosrt_rt1;
