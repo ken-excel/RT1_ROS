@@ -34,6 +34,7 @@ private:
 	ros::Subscriber rss_avg_sub_;
 	ros::Publisher rss_loc_pub_;
 
+	unsigned int wifiMax = 10;
 	unsigned int wifiCount;
 
 	typedef struct{

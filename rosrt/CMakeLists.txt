@@ -24,6 +24,10 @@ add_message_files(
   #Key.msg
   )
 
+add_service_files(
+  DIRECTORY srv
+)
+
 generate_messages(
   DEPENDENCIES 
   std_msgs
@@ -46,6 +50,14 @@ add_executable(rosrt_rt1 src/rosrt_rt1.cpp)
 add_dependencies(rosrt_rt1 ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(rosrt_rt1 ${catkin_LIBRARIES})
 
+add_executable(rosrt_rt1_tor src/rosrt_rt1_tor.cpp)
+add_dependencies(rosrt_rt1_tor ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(rosrt_rt1_tor ${catkin_LIBRARIES})
+
+add_executable(rosrt_rt1_vel src/rosrt_rt1_vel.cpp)
+add_dependencies(rosrt_rt1_vel ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(rosrt_rt1_vel ${catkin_LIBRARIES})
+
 add_executable(rt1_node src/rt1_node.cpp src/rt1_con.cpp)
 add_dependencies(rt1_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(rt1_node ${catkin_LIBRARIES})
@@ -66,5 +78,10 @@ add_executable(rt1_odom src/rt1_odom.cpp)
 add_dependencies(rt1_odom ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(rt1_odom ${catkin_LIBRARIES})
 
+add_executable(rt1_nav src/rt1_nav.cpp)
+add_dependencies(rt1_nav ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(rt1_nav ${catkin_LIBRARIES})
 
-
+add_executable(move src/move.cpp)
+add_dependencies(move ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(move ${catkin_LIBRARIES})

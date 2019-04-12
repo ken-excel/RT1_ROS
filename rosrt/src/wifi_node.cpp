@@ -16,8 +16,8 @@ void wifiNode::rssRegis(string addr, float avg, int frequency)
 	bool newRegis = true; 
 	for (int i = 0; i < data_count; i++)
 	{
-		db_out_.rss[i].rss = NULL;
-		db_out_.rss[i].dist = NULL;	
+		rss_out_.rss[i].rss = NULL;
+		rss_out_.rss[i].dist = NULL;	
 	}
 	//
 	if (data_count != 0){
@@ -28,7 +28,7 @@ void wifiNode::rssRegis(string addr, float avg, int frequency)
 				rss_out_.rss[i].rss = avg;
 				rss_out_.rss[i].freq = frequency;
 				rss_out_.rss[i].dist = pow(10,((-avg - 20*log10(frequency) + 27.55)/20));
-				db_out_.rss[i].rss = avg;
+				//Data[i].rss = avg;
 				newRegis = false;
 				break;
 			}
@@ -42,7 +42,6 @@ void wifiNode::rssRegis(string addr, float avg, int frequency)
 		new_rss.freq = frequency;
 		new_rss.dist = pow(10,((-avg - 20*log10(frequency) + 27.55)/20));
 		rss_out_.rss.push_back(new_rss);
-		db_out_.rss.push_back(new_rss);
 		data_count++;
 	}
 	else{
@@ -74,13 +73,11 @@ void wifiNode::process()
 {
 	rss_out_.header.stamp=ros::Time::now();
 	double elapsed = (rss_out_.header.stamp - begin_time).toSec();
-	if (elapsed < 10000){
-		outputFile<<elapsed<<",";
-		for (int i = 0; i < db_out_.rss.size(); i++){
-			outputFile<<float(db_out_.rss[i].rss);
-			if (i != db_out_.rss.size()-1) outputFile<<",";
-			else outputFile<<endl;
-		}
+	outputFile<<elapsed<<",";
+	for (int i = 0; i < rss_out_.rss.size(); i++){
+		outputFile<<float(rss_out_.rss[i].rss);
+		if (i != rss_out_.rss.size()-1) outputFile<<",";
+		else outputFile<<endl;
 	}
 	cout<<"Publishing..."<<""<<endl;
 	rss_pub_.publish(rss_out_);
@@ -90,9 +87,9 @@ void wifiNode::process()
 void wifiNode::shutdown()
 {
 	outputFile<<"Time,";
-	for (int i = 0; i < db_out_.rss.size(); i++){
-		outputFile<<db_out_.rss[i].name;
-		if (i != db_out_.rss.size()-1) outputFile<<",";
+	for (int i = 0; i < rss_out_.rss.size(); i++){
+		outputFile<<rss_out_.rss[i].name;
+		if (i != rss_out_.rss.size()-1) outputFile<<",";
 		else outputFile<<endl;
 	}
 }

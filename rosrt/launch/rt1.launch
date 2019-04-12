@@ -1,7 +1,14 @@
 <launch>
 	<!--node pkg="ros_start" 		 type="init.sh" name="system_init" output="screen" launch-prefix="sudo"/-->
     <!-- RT1 -->
-	<node name="rosrt_rt1"           pkg="ros_start"  type="rosrt_rt1"/>
-	<node name="rt1_node"		 pkg="ros_start"  type="rt1_node" output="screen"/>
-	<node name="rt1_odom"		 pkg="ros_start"  type="rt1_odom"/>
+	<node name="rosrt_rt1"           pkg="ros_start"  type="rosrt_rt1_tor"/>
+	<node name="rt1_node"		 pkg="ros_start"  type="rt1_node" output="screen">
+		<param name="k_lin"	value="1"/>
+		<param name="k_rot"	value="0.01"/>
+		<param name="min_lin"	value="0.5"/>
+		<param name="max_lin"	value="30"/>
+		<param name="min_rot"	value="0.05"/>
+		<param name="max_rot"	value="5"/>
+	</node>
+	<!--node name="rt1_odom"		 pkg="ros_start"  type="rt1_odom"/-->
 </launch>

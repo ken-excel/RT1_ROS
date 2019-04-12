@@ -43,12 +43,10 @@ private:
 	vector<database> db;
 	double min_rss = 90.0; //-90dB
 	double min_dist = 30.0;
-	double runtime = 50;
 
 	//Functions
 	void rssRead(const ros_start::RssAvg &rss);
 	double rssComp(database rss_db, ros_start::RssAvg rss_in);	
-	double rssCompOld(database rss_db, ros_start::RssAvg rss_in);	
 	void rssStaticRead(const ros_start::PointRss &rss);
 	double rssStaticComp(database rss_db, ros_start::PointRss rss_in);	
 };

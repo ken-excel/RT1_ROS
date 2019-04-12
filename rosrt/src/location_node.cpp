@@ -24,7 +24,8 @@ void locationNode::rssRead(const ros_start::RssAvg &rss) //Read, Find Avg. Send 
 			locationNode::findAverage(rss_temp_[i]);
 		}
 		else{
-			
+			rss_temp_[i].mean_rss = 10000;
+			rss_temp_[i].mean_dist = 10000;
 		}
 		rss_arr_.resize(wifiCount);
 		rss_arr_[i] = rss_temp_[i];
@@ -56,6 +57,9 @@ void locationNode::process()
 	ros_start::PointRss location; 
 	location.header.stamp=ros::Time::now();
 	location.location = loc_name;
+	int wifiN;
+	if (wifiCount < wifiMax) wifiN = wifiCount;
+	else wifiN = wifiMax;
 	double elapsed = (location.header.stamp - begin_time).toSec();
 	// if (first_write){
 	// 	fprintf(pFile, "time,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n",rss_arr_[0].name.c_str(),rss_arr_[1].name.c_str(),rss_arr_[2].name.c_str(),rss_arr_[3].name.c_str(),rss_arr_[4].name.c_str(),rss_arr_[5].name.c_str(),rss_arr_[6].name.c_str(),rss_arr_[7].name.c_str(),rss_arr_[8].name.c_str(),rss_arr_[9].name.c_str());
@@ -68,13 +72,13 @@ void locationNode::process()
 		{
 			fprintf(pFile, "%f,",elapsed);
 			fprintf(qFile, "%f,",elapsed);
-			for(int i=0; i<wifiCount; i++){
+			for(int i=0; i<wifiN; i++){
 				location.ssid.push_back(rss_arr_[i].name);
 				location.mean_rss.push_back(rss_arr_[i].mean_rss);
 				location.mean_dist.push_back(rss_arr_[i].mean_dist);
 				fprintf(pFile, "%f",rss_arr_[i].mean_dist);
 				fprintf(qFile, "%f",rss_arr_[i].mean_rss);
-				if (i != wifiCount-1){
+				if (i != wifiN-1){
 					fprintf(pFile, ",");
 					fprintf(qFile, ",");
 				}

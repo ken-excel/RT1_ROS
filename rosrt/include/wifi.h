@@ -40,7 +40,6 @@ private:
 	ros::Publisher rss_pub_;
 
 	ros_start::RssAvg rss_out_;
-	ros_start::RssAvg db_out_;
 
 	int	data_count = 0;
 

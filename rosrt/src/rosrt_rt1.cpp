@@ -228,7 +228,9 @@ static void *subTask(void *stock)
 	double speed, force, rotate;
 	double force_left, force_right;
 	double speed_left, speed_right;
-	int fspeed, ftorqu, fradiu;
+	int fspeed = 0;
+	int ftorqu = 0;
+	int fradiu = 0;
 	double latest_speed_left, latest_speed_right;
 	double latest_force_left, latest_force_right;
 	int handle_stat; //Added by Ken
@@ -298,7 +300,7 @@ if (fd < 0) fprintf(stderr, "open %s error\n", receive_stock->port_);
 
 	for(;task_end == 0;)
 	{
-		if (last_wrench_cnt_w != last_wrench_cnt_r)
+		if ((last_wrench_cnt_w != last_wrench_cnt_r)||(last_twist_cnt_w != last_twist_cnt_r))
 		{
 			if (tor_mode){ //tor_mode	
 				force = last_wrench_buf[last_wrench_cnt_r].force.x;		/* N */
@@ -340,6 +342,9 @@ if (fd < 0) fprintf(stderr, "open %s error\n", receive_stock->port_);
 			force_right *= FORCE_COEFF_RT1;	/* mA */
 			speed_left *= SPEED_COEFF_RT1;
 			speed_right *= SPEED_COEFF_RT1;
+
+			if (tor_mode) printf("tormode");
+			if (vel_mode) printf("velmode");
 
 			if (tor_mode) //if force mode is on
 			{
@@ -652,7 +657,7 @@ public:
 
 	void wrenchCallback(const geometry_msgs::Wrench &wrench_msg) {
 
-//		printf("wrenchCallback\n");
+		printf("wrenchCallback\n");
 		last_wrench_buf[last_wrench_cnt_w] = wrench_msg;
 		last_wrench_cnt_w++;
 		if (last_wrench_cnt_w >= MAX_WRENCH_CNT)
@@ -664,7 +669,7 @@ public:
 
 	void twistCallback(const geometry_msgs::Twist &twist_msg) {
 
-		//printf("twistCallback\n");
+		printf("twistCallback\n");
 		last_twist_buf[last_twist_cnt_w] = twist_msg;
 		last_twist_cnt_w++;
 		if (last_twist_cnt_w >= MAX_TWIST_CNT)
