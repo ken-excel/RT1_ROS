@@ -1,5 +1,9 @@
 int8 id
 string name
 int16 freq
-int8 rss
+int8 timeout
+float32 rss
 float32 dist
+bool first_data
+float32 x
+float32 cov

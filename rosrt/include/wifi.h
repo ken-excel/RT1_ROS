@@ -41,7 +41,7 @@ private:
 
 	ros_start::RssAvg rss_out_;
 
-	int	data_count = 0;
+	int data_count = 0;
 
 	//Functions
 	void rssRead(const rss::RssData &rss);

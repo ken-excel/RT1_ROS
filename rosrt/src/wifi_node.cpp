@@ -2,6 +2,36 @@
 
 using namespace std;
 
+// Kalman filter
+//reference https://www.wouterbulten.nl/blog/tech/kalman-filters-explained-removing-noise-from-rssi-signals/		
+int R = 1, Q = 3, A = 1, B = 0, C = 1;
+//double cov = 0, x = 0;
+//bool first_data = true;
+
+void kalman_filter(ros_start::RssDatumAvg &rss, double u) 
+{
+	if (rss.first_data) {
+	    rss.x = (1 / C) * rss.rss;
+   		rss.cov = (1 / C) * Q * (1 / C);
+	    rss.first_data = false;
+	}
+    else {
+
+      // Compute prediction
+      double predX = (A * rss.x) + (B * u);
+      double predCov = ((A * rss.cov) * A) + R;
+
+      // Kalman gain
+      double K = predCov * C * (1 / ((C * predCov * C) + Q));
+
+      // Correction
+      rss.x = predX + K * (rss.rss - (C * predX));
+      rss.cov = predCov - (K * C * predCov);
+    }
+    //return rss;
+}
+	  
+
 wifiNode::wifiNode():
 	nh_("~")
 {
@@ -14,20 +44,22 @@ void wifiNode::rssRegis(string addr, float avg, int frequency)
 {
 	//initialize
 	bool newRegis = true; 
-	for (int i = 0; i < data_count; i++)
-	{
-		rss_out_.rss[i].rss = NULL;
-		rss_out_.rss[i].dist = NULL;	
-	}
+	// for (int i = 0; i < data_count; i++)
+	// {
+	// 	rss_out_.rss[i].rss = NULL;
+	// 	rss_out_.rss[i].dist = NULL;	
+	// }
 	//
 	if (data_count != 0){
 		for(int i = 0; i < data_count; i++){
 			//cout<<addr.c_str()<<" and "<<rss_out_.rss[i].name.c_str()<<endl;
 			if(strcmp(addr.c_str(),rss_out_.rss[i].name.c_str()) == 0){	
-				//cout<<"---Matching";
+				//cout<<"---Matching"<<endl;
 				rss_out_.rss[i].rss = avg;
+				rss_out_.rss[i].timeout = 0;
 				rss_out_.rss[i].freq = frequency;
 				rss_out_.rss[i].dist = pow(10,((-avg - 20*log10(frequency) + 27.55)/20));
+				kalman_filter(rss_out_.rss[i], 0);
 				//Data[i].rss = avg;
 				newRegis = false;
 				break;
@@ -35,12 +67,16 @@ void wifiNode::rssRegis(string addr, float avg, int frequency)
 		}
 	}
 	if (newRegis){
+		//cout<<"---NewRegis"<<endl;
 		ros_start::RssDatumAvg new_rss;
 		new_rss.id = data_count;
 		new_rss.name = addr;
 		new_rss.rss = avg;
 		new_rss.freq = frequency;
+		new_rss.timeout = 0;
+		new_rss.first_data = true;
 		new_rss.dist = pow(10,((-avg - 20*log10(frequency) + 27.55)/20));
+		kalman_filter(new_rss, 0); 
 		rss_out_.rss.push_back(new_rss);
 		data_count++;
 	}
@@ -53,7 +89,7 @@ void wifiNode::rssRead(const rss::RssData &rss)
 {
 	int i = rss.mac_address.size();
 	for (int t = 0; t<i; t++){
-		//cout<<t<<" "<<rss.mac_address[t]<<" "<<rss.freq[t]<<" Signal:";
+		cout<<t<<" "<<rss.mac_address[t]<<" "<<rss.freq[t]<<" Signal:";
 		int j = rss.data[t].rss.size(); 
 		float sum = 0;
 		string name = rss.mac_address[t];
@@ -63,7 +99,7 @@ void wifiNode::rssRead(const rss::RssData &rss)
 		}
 		float avg = sum/j;
 		int frequency = rss.freq[t];
-		//cout<<"Sending Wifi:"<<name<<endl;
+		cout<<avg<<endl;
 		wifiNode::rssRegis(name,avg,frequency);
 	}
 	data_ready = true;
@@ -72,14 +108,24 @@ void wifiNode::rssRead(const rss::RssData &rss)
 void wifiNode::process()
 {
 	rss_out_.header.stamp=ros::Time::now();
-	double elapsed = (rss_out_.header.stamp - begin_time).toSec();
-	outputFile<<elapsed<<",";
+	// double elapsed = (rss_out_.header.stamp - begin_time).toSec();
+	// outputFile<<elapsed<<",";
+	// for (int i = 0; i < rss_out_.rss.size(); i++){
+	// 	outputFile<<float(rss_out_.rss[i].rss);
+	// 	if (i != rss_out_.rss.size()-1) outputFile<<",";
+	// 	else outputFile<<endl;
+	// }
+	//cout<<"Publishing..."<<""<<endl;
+
 	for (int i = 0; i < rss_out_.rss.size(); i++){
-		outputFile<<float(rss_out_.rss[i].rss);
-		if (i != rss_out_.rss.size()-1) outputFile<<",";
-		else outputFile<<endl;
+		if (rss_out_.rss[i].timeout > 10){
+			rss_out_.rss[i].rss = -100; //signal lost
+			rss_out_.rss[i].first_data = true; //reset kalman filter
+		}
+		rss_out_.rss[i].timeout ++;
 	}
-	cout<<"Publishing..."<<""<<endl;
+
+//	cout<<rss_out_<<endl;
 	rss_pub_.publish(rss_out_);
 	data_ready = false;
 }

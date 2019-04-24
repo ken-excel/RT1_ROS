@@ -19,6 +19,7 @@ public:
 	RT1Nav();
 	void process();
 	void shutdown();
+	move_base_msgs::MoveBaseGoal goal;
 
 private:
 	ros::NodeHandle nh_;
@@ -30,14 +31,12 @@ private:
 
 	ros_start::RssAvg rss_goal, rss_robot;
 	
-	move_base_msgs::MoveBaseGoal goal;
 	double th;
 
 	int instance = 0;
 	int AP_num = 10;
 	double min_rss = -90.0;
 	double rms_all;
-	bool goal_ready, goal_reach;
 
 	typedef struct{
 		string name;

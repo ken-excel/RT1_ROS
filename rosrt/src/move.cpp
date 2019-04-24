@@ -7,7 +7,7 @@ int main(int argc, char **argv)
   ros::init(argc, argv, "move_pos");
   if (argc != 3)
   {
-    ROS_INFO("usage: move_pos x y (distance in cm)");
+    ROS_INFO("usage: move_pos x y (distance in m)");
     return 1;
   }
 
@@ -16,6 +16,15 @@ int main(int argc, char **argv)
   ros_start::Service srv;
   srv.request.goal_x = atoll(argv[1]);
   srv.request.goal_y = atoll(argv[2]);
+  if (client.call(srv))
+  {
+    ROS_INFO("Goal sent");
+  }
+  else
+  {
+    ROS_ERROR("Failed to call service");
+    return 1;
+  }
 
   return 0;
 }
