@@ -58,6 +58,10 @@ add_executable(rosrt_rt1_vel src/rosrt_rt1_vel.cpp)
 add_dependencies(rosrt_rt1_vel ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(rosrt_rt1_vel ${catkin_LIBRARIES})
 
+add_executable(rosrt_rt1_torvel src/rosrt_rt1_torvel.cpp)
+add_dependencies(rosrt_rt1_torvel ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(rosrt_rt1_torvel ${catkin_LIBRARIES})
+
 add_executable(rt1_node src/rt1_node.cpp src/rt1_con.cpp)
 add_dependencies(rt1_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(rt1_node ${catkin_LIBRARIES})
