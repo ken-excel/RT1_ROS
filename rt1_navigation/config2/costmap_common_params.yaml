@@ -1,0 +1,27 @@
+robot_base_frame: base_link
+
+origin_z: 0.0
+z_resolution: .1
+z_voxels: 10
+
+transform_tolerance: 2
+
+footprint: [[0.6, -0.245], [0.6, 0.245], [0, 0.245], [0, -0.245]] #Robot's wheel position from base_link
+inflation_radius: 0.3 #Inflate safety radius from footprint
+#robot_radius: 0.18
+#inflater:
+#  robot_radius: 0.18
+#  inflation_radius: 0.24
+
+obstacles:
+  observation_sources: base_scan
+  base_scan:
+    sensor_frame: laser
+    data_type: LaserScan
+    topic: scan
+    marking: true
+    clearing: true
+    obstacle_range: 3.0 #Range to consider obstacles
+    raytrace_range: 4.0 #Range to consider free space
+    min_obstacle_height: -0.1
+    max_obstacle_height: 1.0

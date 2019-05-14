@@ -1,8 +1,8 @@
 DWAPlannerROS:
 
   # Robot Configuration Parameters - RT1
-  max_vel_x: 0.3
-  min_vel_x: -0.3 
+  max_vel_x: 0.5
+  min_vel_x: 0
 
   max_vel_y: 0.0  # diff drive robot
   min_vel_y: 0.0  # diff drive robot
