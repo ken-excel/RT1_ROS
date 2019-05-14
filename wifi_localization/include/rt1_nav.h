@@ -4,8 +4,8 @@
 #include <ros/ros.h>
 #include <ros/package.h>
 #include <rt1nav_param.h>
-#include "ros_start/RssAvg.h"
-#include "ros_start/Service.h"
+#include "wifi_nav/RssAvg.h"
+#include "wifi_nav/Service.h"
 #include <move_base_msgs/MoveBaseAction.h>
 #include <actionlib/client/simple_action_client.h>
 #include <vector>
@@ -29,7 +29,7 @@ private:
 	ros::Subscriber rss_robot_sub_; //subscribe rss data
 	//ros::Subscriber status_sub_; //subscribe status of robot whether has it reached the goal yet?  
 
-	ros_start::RssAvg rss_goal, rss_robot;
+	wifi_nav::RssAvg rss_goal, rss_robot;
 	
 	double th;
 
@@ -54,11 +54,11 @@ private:
 
 	vector<position_log> log;
 
-	double compare_all(ros_start::RssAvg rss_g, ros_start::RssAvg rss_r);
-	void compare_each(ros_start::RssAvg rss_g, ros_start::RssAvg rss_r);
-	void rssRead_goal(const ros_start::RssAvg &rss);
-	void rssRead_robot(const ros_start::RssAvg &rss);
-	bool PosSrv(ros_start::Service::Request &req, ros_start::Service::Response &res);
+	double compare_all(wifi_nav::RssAvg rss_g, wifi_nav::RssAvg rss_r);
+	void compare_each(wifi_nav::RssAvg rss_g, wifi_nav::RssAvg rss_r);
+	void rssRead_goal(const wifi_nav::RssAvg &rss);
+	void rssRead_robot(const wifi_nav::RssAvg &rss);
+	bool PosSrv(wifi_nav::Service::Request &req, wifi_nav::Service::Response &res);
 
 	//Algorithm Function
 	void blindwalk();

@@ -1,5 +1,5 @@
 #include "ros/ros.h"
-#include "ros_start/Service.h"
+#include "wifi_nav/Service.h"
 #include <cstdlib>
 
 int main(int argc, char **argv)
@@ -12,8 +12,8 @@ int main(int argc, char **argv)
   }
 
   ros::NodeHandle n;
-  ros::ServiceClient client = n.serviceClient<ros_start::Service>("move_pos");
-  ros_start::Service srv;
+  ros::ServiceClient client = n.serviceClient<wifi_nav::Service>("move_pos");
+  wifi_nav::Service srv;
   srv.request.goal_x = atoll(argv[1]);
   srv.request.goal_y = atoll(argv[2]);
   if (client.call(srv))

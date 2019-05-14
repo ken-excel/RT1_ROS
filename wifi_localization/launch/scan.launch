@@ -5,12 +5,12 @@
 	<arg name="wifi_robot_raw" default="/rss_robot"/>
 	<arg name="wifi_robot_avg" default="/rss_robot_avg"/>
 
-	<node name="wifi_node_pc_scan"           pkg="ros_start"  type="wifi_node">
+	<node name="wifi_node_pc_scan"           pkg="wifi_nav"  type="wifi_node">
 		<remap from="/rss" to="$(arg wifi_pc_raw)"/>
 		<remap from="/rss_avg" to="$(arg wifi_pc_avg)"/>
 	</node>
 
-	<node name="wifi_node_robot_scan"        pkg="ros_start"  type="wifi_node">
+	<node name="wifi_node_robot_scan"        pkg="wifi_nav"  type="wifi_node">
 		<remap from="/rss" to="$(arg wifi_robot_raw)"/>
 		<remap from="/rss_avg" to="$(arg wifi_robot_avg)"/>
 	</node>

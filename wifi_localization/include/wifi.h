@@ -7,8 +7,8 @@
 #include <iostream>
 #include <fstream>
 #include "rss/RssData.h"
-#include "ros_start/RssAvg.h"
-#include "ros_start/RssDatumAvg.h"
+#include "wifi_nav/RssAvg.h"
+#include "wifi_nav/RssDatumAvg.h"
 #include <string.h>
 #include <vector>
 
@@ -39,7 +39,7 @@ private:
 	ros::Subscriber rss_sub_;
 	ros::Publisher rss_pub_;
 
-	ros_start::RssAvg rss_out_;
+	wifi_nav::RssAvg rss_out_;
 
 	int data_count = 0;
 

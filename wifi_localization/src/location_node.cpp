@@ -6,10 +6,10 @@ locationNode::locationNode():
 	nh_("~")
 {
 	rss_avg_sub_ = nh_.subscribe("/rss_avg", 1, &locationNode::rssRead, this);
-	rss_loc_pub_ = nh_.advertise<ros_start::PointRss>("/rss_loc", 1);
+	rss_loc_pub_ = nh_.advertise<wifi_nav::PointRss>("/rss_loc", 1);
 }
 
-void locationNode::rssRead(const ros_start::RssAvg &rss) //Read, Find Avg. Send Top 5 Candidates
+void locationNode::rssRead(const wifi_nav::RssAvg &rss) //Read, Find Avg. Send Top 5 Candidates
 {
 	wifiCount = rss.rss.size()-1;
 	for (int i = 0; i<wifiCount; i++)
@@ -54,7 +54,7 @@ void locationNode::findAverage(rssData &rss_in_) //find all average in location 
 
 void locationNode::process()
 {
-	ros_start::PointRss location; 
+	wifi_nav::PointRss location; 
 	location.header.stamp=ros::Time::now();
 	location.location = loc_name;
 	int wifiN;

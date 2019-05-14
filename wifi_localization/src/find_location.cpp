@@ -12,7 +12,7 @@ locationFind::locationFind():
 	rss_sub_loc_ = nh_.subscribe("/rss_loc", 1, &locationFind::rssStaticRead, this);
 }
 
-void locationFind::rssRead(const ros_start::RssAvg &rss)
+void locationFind::rssRead(const wifi_nav::RssAvg &rss)
 {
 	if (mode == "moving")
 	{
@@ -53,7 +53,7 @@ void locationFind::rssRead(const ros_start::RssAvg &rss)
 	}
 }
 
-void locationFind::rssStaticRead(const ros_start::PointRss &rss_loc)
+void locationFind::rssStaticRead(const wifi_nav::PointRss &rss_loc)
 {
 	if (mode == "static")
 	{
@@ -94,7 +94,7 @@ void locationFind::rssStaticRead(const ros_start::PointRss &rss_loc)
 	}
 }
 
-double locationFind::rssComp(database rss_db, ros_start::RssAvg rss_in)
+double locationFind::rssComp(database rss_db, wifi_nav::RssAvg rss_in)
 {
 	bool matching = false;
 	double root;
@@ -137,7 +137,7 @@ double locationFind::rssComp(database rss_db, ros_start::RssAvg rss_in)
 	return rms;
 }
 
-double locationFind::rssStaticComp(database rss_db, ros_start::PointRss rss_in)
+double locationFind::rssStaticComp(database rss_db, wifi_nav::PointRss rss_in)
 {
 	bool matching = false;
 	double root;

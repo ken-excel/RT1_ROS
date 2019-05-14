@@ -8,7 +8,7 @@ int R = 1, Q = 3, A = 1, B = 0, C = 1;
 //double cov = 0, x = 0;
 //bool first_data = true;
 
-void kalman_filter(ros_start::RssDatumAvg &rss, double u) 
+void kalman_filter(wifi_nav::RssDatumAvg &rss, double u) 
 {
 	if (rss.first_data) {
 	    rss.x = (1 / C) * rss.rss;
@@ -36,7 +36,7 @@ wifiNode::wifiNode():
 	nh_("~")
 {
 	rss_sub_ = nh_.subscribe("/rss", 1, &wifiNode::rssRead, this);
-	rss_pub_ = nh_.advertise<ros_start::RssAvg>("/rss_avg", 1);
+	rss_pub_ = nh_.advertise<wifi_nav::RssAvg>("/rss_avg", 1);
 	//Publisher, service, etc.
 }
 
@@ -68,7 +68,7 @@ void wifiNode::rssRegis(string addr, float avg, int frequency)
 	}
 	if (newRegis){
 		//cout<<"---NewRegis"<<endl;
-		ros_start::RssDatumAvg new_rss;
+		wifi_nav::RssDatumAvg new_rss;
 		new_rss.id = data_count;
 		new_rss.name = addr;
 		new_rss.rss = avg;

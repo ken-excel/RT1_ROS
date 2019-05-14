@@ -26,7 +26,7 @@ RT1Nav::RT1Nav():
 	goal.target_pose.pose.orientation.w= 1.0;
 }
 
-double RT1Nav::compare_all(ros_start::RssAvg rss_g, ros_start::RssAvg rss_r)
+double RT1Nav::compare_all(wifi_nav::RssAvg rss_g, wifi_nav::RssAvg rss_r)
 {
 	bool matching = false;
 	double root;
@@ -59,7 +59,7 @@ double RT1Nav::compare_all(ros_start::RssAvg rss_g, ros_start::RssAvg rss_r)
 	return rms;
 }
 
-void RT1Nav::compare_each(ros_start::RssAvg rss_g, ros_start::RssAvg rss_r) //HERE
+void RT1Nav::compare_each(wifi_nav::RssAvg rss_g, wifi_nav::RssAvg rss_r) //HERE
 {
 	bool matching = false;
 	vector<accesspoint> error;
@@ -90,7 +90,7 @@ void RT1Nav::compare_each(ros_start::RssAvg rss_g, ros_start::RssAvg rss_r) //HE
 	ap_error = error;
 }
 
-bool RT1Nav::PosSrv(ros_start::Service::Request &req, ros_start::Service::Response &res)
+bool RT1Nav::PosSrv(wifi_nav::Service::Request &req, wifi_nav::Service::Response &res)
 {
 	ROS_INFO("REQUESTED");
 	goal.target_pose.header.frame_id = "map";
@@ -102,13 +102,13 @@ bool RT1Nav::PosSrv(ros_start::Service::Request &req, ros_start::Service::Respon
 	return true;
 }
 
-void RT1Nav::rssRead_goal(const ros_start::RssAvg &rss)
+void RT1Nav::rssRead_goal(const wifi_nav::RssAvg &rss)
 {
 	rss_goal = rss;
 	rss_g_ready = true;
 }
 
-void RT1Nav::rssRead_robot(const ros_start::RssAvg &rss)
+void RT1Nav::rssRead_robot(const wifi_nav::RssAvg &rss)
 {
 	rss_robot = rss;
 	rss_r_ready = true;

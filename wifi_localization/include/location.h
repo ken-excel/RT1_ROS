@@ -6,8 +6,8 @@
 #include <math.h>
 #include <iostream>
 #include <fstream>
-#include "ros_start/RssAvg.h"
-#include "ros_start/PointRss.h"
+#include "wifi_nav/RssAvg.h"
+#include "wifi_nav/PointRss.h"
 #include <string.h>
 #include <vector>
 
@@ -54,7 +54,7 @@ private:
 	vector<rssData> rss_arr_;
 
 	//Functions
-	void rssRead(const ros_start::RssAvg &rss); //Read, Find Avg. Send Top 5 Candidates
+	void rssRead(const wifi_nav::RssAvg &rss); //Read, Find Avg. Send Top 5 Candidates
 	void findAverage(rssData &rss_in_); //find all average in location msg in this function
 };
 

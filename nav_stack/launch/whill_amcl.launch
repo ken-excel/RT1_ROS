@@ -8,7 +8,7 @@
 args="0.4 0.2 0.0 0.0 0.0 0.0 /base_link /laser 40" /-->
 
   <!-- Map server -->
-  <node name="map_server" pkg="map_server" type="map_server" args="$(find rt1_navigation)/map/$(arg map_file)" />
+  <node name="map_server" pkg="map_server" type="map_server" args="$(find nav_stack)/map/$(arg map_file)" />
 
   <!-- AMCL -->
   <include file="$(find rt1_navigation)/launch/include/amcl.launch.xml"/>
@@ -17,10 +17,10 @@ args="0.4 0.2 0.0 0.0 0.0 0.0 /base_link /laser 40" /-->
   <include file="$(find rt1_navigation)/launch/include/move_base.launch.xml"/>
 
   <!-- Laser Scan Matcher -->
-  <include if="$(arg use_lsm)" file="$(find ros_start)/launch/laser_scan_matcher.launch"/>
+  <include if="$(arg use_lsm)" file="$(find nav_stack)/launch/laser_scan_matcher.launch"/>
 
   <!-- Rviz -->
-  <include if="$(arg launch_rviz)" file="$(find rt1_navigation)/launch/rviz.launch"/>
+  <include if="$(arg launch_rviz)" file="$(find nav_stack)/launch/rviz.launch"/>
 
   <node if="$(arg with_camera)" name="image_transport" pkg="image_transport" type="republish" args="compressed in:=/raspicam_node/image raw out:=/camera/image_raw"/>
 

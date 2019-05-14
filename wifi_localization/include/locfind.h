@@ -7,8 +7,8 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
-#include "ros_start/PointRss.h"
-#include "ros_start/RssAvg.h"
+#include "wifi_nav/PointRss.h"
+#include "wifi_nav/RssAvg.h"
 #include <string.h>
 
 using namespace std;
@@ -30,7 +30,7 @@ private:
 	ros::Subscriber rss_sub_avg_;
 	ros::Subscriber rss_sub_loc_;
 
-	ros_start::PointRss rss_comp_;
+	wifi_nav::PointRss rss_comp_;
 
 	typedef struct{
 		string loc;
@@ -45,10 +45,10 @@ private:
 	double min_dist = 30.0;
 
 	//Functions
-	void rssRead(const ros_start::RssAvg &rss);
-	double rssComp(database rss_db, ros_start::RssAvg rss_in);	
-	void rssStaticRead(const ros_start::PointRss &rss);
-	double rssStaticComp(database rss_db, ros_start::PointRss rss_in);	
+	void rssRead(const wifi_nav::RssAvg &rss);
+	double rssComp(database rss_db, wifi_nav::RssAvg rss_in);	
+	void rssStaticRead(const wifi_nav::PointRss &rss);
+	double rssStaticComp(database rss_db, wifi_nav::PointRss rss_in);	
 };
 
 #endif

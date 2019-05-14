@@ -1,9 +1,4 @@
-# Modified by: Kengkij Promsutipong
-
-Torque control for RT1 with handle grip check. The node accepts both cmd_tor and cmd_vel.
-$ rosrun ros_start rosrt_rt1_torvel
-
-# Summary
+# Package Summary
 
 rosrt_rt1 is a packege of ROS node to manipulate RT.works' robot assist walker RT.1.
 This explains how to use it.

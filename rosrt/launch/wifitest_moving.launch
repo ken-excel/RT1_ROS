@@ -1,4 +1,0 @@
-<launch>
-	<node name="wifi_node"           pkg="ros_start"  type="wifi_node"/>
-	
-</launch>
