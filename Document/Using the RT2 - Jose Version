@@ -1,0 +1,13 @@
+Using the RT2 - Jose Version
+
+1. Add your user to the dialout group 
+	sudo gpasswd -a raven dialout
+2. Change the permissions of the ttyUSB port
+	sudo chmod a+rw /dev/rt1
+3. Change the speed of the port
+	stty -F /dev/rt1 raw -echo speed 115200
+4. Run the node
+	rosrun ros_start rosrt_rt2 
+5. Run the sample.py
+	rosrun ros_start sample.py /mobile_base/commands/velocity:=/cmd_vel
+6. If you want to see the output, use either rqt_plot or rostopic echo /rosrt_rt2

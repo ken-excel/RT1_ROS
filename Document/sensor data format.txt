@@ -1,0 +1,104 @@
+###################################
+# Example sensor data batch from RT1
+###################################
+
+mtl,0,0,0,0 28/-13/-15 0/24/0 -220:509/500/491
+btr,782,2000,1564,60
+mtr,0,0,0,0 44/-76/32 0/20/0 -280:511/489/500
+sa,104,208,27,-48,28,2,-9898,-10001
+sys,1007,1,0,0,0,0,0,15721,110
+sy,0,-36,3
+sf,-217,-550
+sh,2,80000000,0,0,0,0,1
+ss,28186,23,0,3328,4914,28,1300
+
+###################################
+# Currently used by rosrt_rt1
+###################################
+
+mtl,[Left Motor Speed, m/hr],[],[],[] []/[]/[] []/[]/[] []:[]/[]/[] 
+btr,[Battery Ratio],[Max Battery mAh],[Battery Remain mAh],[Current Battery mA]
+mtr,[Right Motor Speed m/hr],[],[],[] []/[]/[] []/[]/[] []:[]/[]/[]
+sa,[-acc.lin.y mm/s^2],[acc.lin.x],[acc.lin.z],[],[],[],[],[]
+sys,[],[],[],[],[],[],[],[],[]
+sy,[-acc.ang.y 0.0001 rad/s],[acc.ang.x],[acc.ang.z]
+sf,[Left Force mN],[Right Force mN]
+sh,[],[],[],[],[],[],[]
+ss,[],[],[],[],[],[],[]
+
+velocity = (LeftMotor + RightMotor)/2
+angular = (RightMotor - LeftMotor)/RearTread
+handle.force =  (LeftForce + RightForce)/2
+handle.torque = (RightForce - LeftForce)/SensorGap
+
+##################################
+# Command FROM RT1
+##################################
+
+mtl - motor left
+btr - battery
+mtr - motor right
+sa - accerelation
+sy - angular acceleration
+sf - force
+sh - handle
+ss - sensor
+
+mtl,[Left Motor Speed, m/hr],[],[],[] []/[]/[] []/[]/[] []:[]/[]/[] driver.c / The rests are unused
+btr,[Battery Ratio],[Max Battery mAh],[Battery Remain mAh],[Current Battery mA] batmgr.c
+mtr,[Right Motor Speed m/hr],[],[],[] []/[]/[] []/[]/[] []:[]/[]/[] driver.c / The rests are unused
+sa,[-acc.lin.y mm/s^2],[acc.lin.x],[acc.lin.z],[],[],[],[],[] sensor.c // Sensor.c shows 5 members: acc.x, acc1 from gyro2, acc.y, acc2 from gyro1, acc.z => Different from what ros node used?
+sys,[system clock],[system state],[ERROR_FLAGS_SEVERE_GR],[error_flags.severe_handle],[error_flags.common],[0U],[distance.total_pon],[distance.total_integral],[???] arowana.c
+sy,[-acc.ang.y 0.0001 rad/s],[acc.ang.x],[acc.ang.z] sensor.c /gyroscope
+sf,[Left Force mN],[Right Force mN] hcom.c
+sh,[handle mode],[error flag],[audio flag],[request flag],[ret audio flag?],[sw_dat = audio code?],[error count] hcom.c
+ss,[batt voltage mV],[batt temp C],[pbrake mcurrent mA],[voltage d3300 mV],[voltage edlc],[sensor type psd mm],[???] sensor.c
+
+velocity = (LeftMotor + RightMotor)/2
+angular = (RightMotor - LeftMotor)/RearTread
+handle.force =  (LeftForce + RightForce)/2
+handle.torque = (RightForce - LeftForce)/SensorGap
+
+for 'systemState' 
+Common Flow: 4 -> 1 -> 2 
+0 : Off
+1 : Booting
+2 : Working
+3 : Pausing
+4 : Suspend
+5 : Resuming
+6 : Freezing
+
+for 'ret audio flag'
+0 : No 
+C000 : Left
+C00 : Right
+CC00 : Both
+
+##################################
+# Command TO RT1
+##################################
+
+open port
+
+setmode dbg rtw12345
+fdrive1 => allow driving
+fturn1 => allow turning
+ftorqu2048 => 0 torque (NEW version firmware)
+fspeed2048 => 0 linear
+fradiu2048 => 0 angular
+mtlr2 l => port 0 2 => frequency? 1 => HZ_FIRST_LOOP, 2 => HZ_FIRST_LOOP/10
+mtrr2 r => port 1 2 => frequency?
+sar2 sensor.c/debug_a , 2 => HZ_FIRST_LOOP/10
+syr2 sensor.c/debug_y 
+sfr2 hcom.c/debug_f
+ftorquXXXX(max 4048)
+fspeedXXXX(max 4048)
+fradiuXXXX(max 4048) 
+mtlr1
+mtrr1
+sar1
+syr1
+sfr1
+
+close port

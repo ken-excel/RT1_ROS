@@ -11,10 +11,10 @@ args="0.4 0.2 0.0 0.0 0.0 0.0 /base_link /laser 40" /-->
   <node name="map_server" pkg="map_server" type="map_server" args="$(find nav_stack)/map/$(arg map_file)" />
 
   <!-- AMCL -->
-  <include file="$(find rt1_navigation)/launch/include/amcl.launch.xml"/>
+  <include file="$(find nav_stack)/launch/include/amcl.launch.xml"/>
 
   <!-- Move base -->
-  <include file="$(find rt1_navigation)/launch/include/move_base.launch.xml"/>
+  <include file="$(find nav_stack)/launch/include/move_base.launch.xml"/>
 
   <!-- Laser Scan Matcher -->
   <include if="$(arg use_lsm)" file="$(find nav_stack)/launch/laser_scan_matcher.launch"/>

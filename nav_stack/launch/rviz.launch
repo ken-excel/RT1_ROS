@@ -1,4 +1,4 @@
 <launch>
   <!-- Rviz -->
-  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find rt1_navigation)/launch/navigation.rviz"/>
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find nav_stack)/launch/navigation.rviz"/>
 </launch>
