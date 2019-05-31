@@ -10,8 +10,11 @@
 #include <actionlib/client/simple_action_client.h>
 #include <vector>
 #include <iostream>
+#include <fstream>
 
 using namespace std;
+
+ofstream outputFile, outputFile2;
 
 class RT1Nav
 {
@@ -20,6 +23,8 @@ public:
 	void process();
 	void shutdown();
 	move_base_msgs::MoveBaseGoal goal;
+
+	ros::Time begin_time;
 
 private:
 	ros::NodeHandle nh_;
@@ -34,7 +39,6 @@ private:
 	double th;
 
 	int instance = 0;
-	int AP_num = 10;
 	double min_rss = -90.0;
 	double rms_all;
 
@@ -54,8 +58,8 @@ private:
 
 	vector<position_log> log;
 
-	double compare_all(wifi_nav::RssAvg rss_g, wifi_nav::RssAvg rss_r);
-	void compare_each(wifi_nav::RssAvg rss_g, wifi_nav::RssAvg rss_r);
+	void record(double data1, double data2);
+	double compare(wifi_nav::RssAvg rss_g, wifi_nav::RssAvg rss_r);
 	void rssRead_goal(const wifi_nav::RssAvg &rss);
 	void rssRead_robot(const wifi_nav::RssAvg &rss);
 	bool PosSrv(wifi_nav::Service::Request &req, wifi_nav::Service::Response &res);

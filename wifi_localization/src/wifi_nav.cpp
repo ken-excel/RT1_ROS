@@ -1,5 +1,6 @@
 #include <signal.h>
-#include "rt1_nav.h"
+#include <tf/transform_datatypes.h>
+#include "wifi_nav.h"
 
 bool interrupted = false;
 bool goal_ready = false;
@@ -19,75 +20,76 @@ RT1Nav::RT1Nav():
 	rss_goal_sub_ = nh_.subscribe("/rss_pc_avg", 1, &RT1Nav::rssRead_goal, this);
 	rss_robot_sub_ = nh_.subscribe("/rss_robot_avg", 1, &RT1Nav::rssRead_robot, this);
 	//Set Initial position
-	goal.target_pose.header.frame_id = "map";
+	goal.target_pose.header.frame_id = "base_link";
 	goal.target_pose.header.stamp = ros::Time::now();
 	goal.target_pose.pose.position.x= 0.0;
 	goal.target_pose.pose.position.y= 0.0;
 	goal.target_pose.pose.orientation.w= 1.0;
 }
 
-double RT1Nav::compare_all(wifi_nav::RssAvg rss_g, wifi_nav::RssAvg rss_r)
+void RT1Nav::record(double data1, double data2)
 {
-	bool matching = false;
-	double root;
-	double sum;
-	double rms;
-	int count;
-	for (int i=0; i<AP_num; i++) 
-	{
-		int j;
-		for(j=0; j<rss_r.rss.size(); j++)
-		{
-			if(strcmp(rss_r.rss[j].name.c_str(),rss_g.rss[i].name.c_str()) == 0){
-				matching = true;
-				break;
-			} 
-		}
-		if (matching)
-		{
-			root = pow(fabs(rss_g.rss[i].rss - rss_r.rss[j].rss),2);
-		}
-		else
-		{
-			root = pow(fabs(rss_g.rss[i].rss - min_rss),2);
-		}
-		sum += root;
-		count++;
-	}
-	double avg = sum/count;
-	rms = sqrt(avg);
-	return rms;
+	outputFile<<data1<<","<<data2<<",";
 }
 
-void RT1Nav::compare_each(wifi_nav::RssAvg rss_g, wifi_nav::RssAvg rss_r) //HERE
+double RT1Nav::compare(wifi_nav::RssAvg rss_g, wifi_nav::RssAvg rss_r) //HERE
 {
 	bool matching = false;
 	vector<accesspoint> error;
 	accesspoint ap_err;
 	double d;
-	for (int i=0; i<AP_num; i++) 
+	double root;
+	double sum;
+	double rms;
+	int count = 0;
+
+	//Write to Log
+	ros::Time t = ros::Time::now();
+	double elapsed = (t - begin_time).toSec();
+	outputFile<<elapsed<<",";
+	outputFile2<<elapsed<<",";
+
+	for (int i=0; i<rss_g.rss.size(); i++) 
 	{
-		int j;
-		for(j=0; j<rss_r.rss.size(); j++)
-		{
-			if(strcmp(rss_r.rss[j].name.c_str(),rss_g.rss[i].name.c_str()) == 0){
-				matching = true;
-				break;
-			} 
+		if(rss_g.rss[i].x>-60){
+			int j;
+			for(j=0; j<rss_r.rss.size(); j++)
+			{
+				if(strcmp(rss_r.rss[j].name.c_str(),rss_g.rss[i].name.c_str()) == 0){
+					matching = true;
+					break;
+				} 
+			}
+			
+			if (matching)
+				{
+					if(rss_r.rss[j].x>-60){	
+						RT1Nav::record(rss_g.rss[i].x,rss_r.rss[j].x);
+						d = fabs(rss_g.rss[i].x - rss_r.rss[j].x);
+						cout << rss_g.rss[i].name << "|" << rss_g.rss[i].x << "|" << rss_r.rss[j].x << "|" << d << endl;
+						root = pow(d,2);
+					}
+				}
+				else
+				{
+					RT1Nav::record(rss_g.rss[i].x,min_rss);
+					d = fabs(rss_g.rss[i].x - min_rss);
+					root = pow(d,2);
+				}
+				ap_err.name=rss_g.rss[i].name.c_str();
+				ap_err.diff=d;
+				error.push_back(ap_err);
+				sum += root;
+				count++;
 		}
-		if (matching)
-		{
-			d = fabs(rss_g.rss[i].rss - rss_r.rss[j].rss);
-		}
-		else
-		{
-			d = fabs(rss_g.rss[i].rss - min_rss);
-		}
-		ap_err.name=rss_g.rss[i].name.c_str();
-		ap_err.diff=d;
-		error.push_back(ap_err);
 	}
+	outputFile<<endl;
 	ap_error = error;
+	double avg = sum/count;
+	rms = sqrt(avg);
+	cout<<rms<<endl<<endl;
+	outputFile2<<rms<<endl;
+	return rms;
 }
 
 bool RT1Nav::PosSrv(wifi_nav::Service::Request &req, wifi_nav::Service::Response &res)
@@ -118,17 +120,53 @@ void RT1Nav::process()
 {
   	//Scan&Compare
   	if (rss_g_ready&&rss_r_ready){
-  		rms_all = RT1Nav::compare_all(rss_goal, rss_robot); //overall rms
-  		RT1Nav::compare_each(rss_goal, rss_robot); //each AP's error
+  		rms_all = RT1Nav::compare(rss_goal, rss_robot); //left = static / right = moving / goal is com / robot is whill
+  		//cout << rms_all << endl;
   	}
   	//Register to log
-  	position_log plog;
-  	plog.pos = instance;
-  	plog.x = goal.target_pose.pose.position.x;
-  	plog.y = goal.target_pose.pose.position.y;
-  	plog.rms = rms_all;
-  	plog.error = ap_error;
-  	log.push_back(plog);
+  	if(fabs(rms_all )<3)cout<<"goal reached";//goal
+  	else{ //goal not reach
+  	  	if(!goal_ready) //log current position if robot is stopping
+  	  	{	
+  		  	position_log plog;
+  		  	plog.pos = instance;
+  		  	plog.x = goal.target_pose.pose.position.x;
+  		  	plog.y = goal.target_pose.pose.position.y;
+  		  	plog.rms = rms_all;
+  		  	plog.error = ap_error;
+  		  	log.push_back(plog);
+  	 	}
+  		//goal generation
+  		
+  		goal.target_pose.header.stamp = ros::Time::now();
+
+  		if (instance>0) {
+  			double drms = log[instance].rms - log[instance-1].rms;	
+  			if (drms > 0){
+  				//TURNING
+  				goal.target_pose.pose.position.x = 0.3; 
+				double theta = 30; 
+				double radians = theta * (M_PI/180);
+				tf::Quaternion quaternion;
+				quaternion = tf::createQuaternionFromYaw(radians);
+				geometry_msgs::Quaternion qMsg;
+				tf::quaternionTFToMsg(quaternion, qMsg);
+				goal.target_pose.pose.orientation = qMsg;
+  			} //wrong
+  			else{
+  				//STRAIGHT
+ 				goal.target_pose.pose.position.x = 0.5; 
+ 				goal.target_pose.pose.orientation.w = 1.0;
+  			} //correct
+  		}
+  		else{
+  			//STRAIGHT
+ 			goal.target_pose.pose.position.x = 0.5; 
+ 			goal.target_pose.pose.orientation.w = 1.0;
+  		}
+
+  		goal_ready = true; //send new goal
+  	}  
 
   	//Direction Guess Algorithm 
   	//RT1Nav::blindwalk();
@@ -145,7 +183,13 @@ void RT1Nav::process()
 
 void RT1Nav::shutdown()
 {
-
+	outputFile<<"Time,";
+	for (int i = 0; i < rss_robot.rss.size(); i++){
+		outputFile<<rss_robot.rss[i].name<<"ST,";
+		outputFile<<rss_robot.rss[i].name<<"MV";
+		if (i != rss_robot.rss.size()-1) outputFile<<",";
+		else outputFile<<endl;
+	}
 }
 
 int main(int argc, char** argv)
@@ -154,6 +198,9 @@ int main(int argc, char** argv)
 	RT1Nav object;
 	actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction>  ac("move_base", true);
 	ros::Rate rate(50);
+	object.begin_time = ros::Time::now();
+	outputFile.open("rss_kalman_comparison.txt");
+	outputFile2.open("rms.txt");
 	while(ros::ok() && !interrupted)
 	{
 		signal(SIGINT, mySigintHandler);
@@ -182,6 +229,8 @@ int main(int argc, char** argv)
 	if(interrupted){
 	    ROS_ERROR("SHUTDOWN");
 	    object.shutdown();
+	    outputFile.close();
+	    outputFile2.close();
 	    ros::shutdown();
 	}
 	return 0;

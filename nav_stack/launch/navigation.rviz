@@ -7,6 +7,7 @@ Panels:
         - /Global Options1
         - /TF1
         - /TF1/Frames1
+        - /Pose1
       Splitter Ratio: 0.5
     Tree Height: 435
   - Class: rviz/Selection
@@ -266,6 +267,21 @@ Visualization Manager:
               laser:
                 {}
       Update Interval: 0
+      Value: true
+    - Alpha: 1
+      Axes Length: 1
+      Axes Radius: 0.100000001
+      Class: rviz/Pose
+      Color: 255; 25; 0
+      Enabled: true
+      Head Length: 0.300000012
+      Head Radius: 0.100000001
+      Name: Pose
+      Shaft Length: 1
+      Shaft Radius: 0.0500000007
+      Shape: Arrow
+      Topic: /move_base/current_goal
+      Unreliable: false
       Value: true
   Enabled: true
   Global Options:

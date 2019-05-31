@@ -118,8 +118,9 @@ void wifiNode::process()
 	//cout<<"Publishing..."<<""<<endl;
 
 	for (int i = 0; i < rss_out_.rss.size(); i++){
-		if (rss_out_.rss[i].timeout > 10){
-			rss_out_.rss[i].rss = -100; //signal lost
+		if (rss_out_.rss[i].timeout > 20){
+			rss_out_.rss[i].x = -100; //signal lost
+			rss_out_.rss[i].rss = -100;
 			rss_out_.rss[i].first_data = true; //reset kalman filter
 		}
 		rss_out_.rss[i].timeout ++;

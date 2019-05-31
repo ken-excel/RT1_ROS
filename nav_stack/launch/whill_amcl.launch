@@ -3,9 +3,13 @@
   <arg name="launch_rviz" default="true"/>
   <arg name="with_camera" default="false"/>
   <arg name="use_lsm" default="false"/>
+  <arg name="pub_cmdvel" default="true"/>
 
   <!--node pkg="tf" type="static_transform_publisher" name="base_link_to_laser"
-args="0.4 0.2 0.0 0.0 0.0 0.0 /base_link /laser 40" /-->
+args="0.4 0.2 0.0 0.0 0.0 0.0 /base_link /laser 100" /-->
+
+  <!-- cmdvel to joy translator (for whill) -->
+  <node if="$(arg pub_cmdvel)" name="cmdvel_to_joy" pkg="ros_whill" type="cmdvel_to_joy"/> 
 
   <!-- Map server -->
   <node name="map_server" pkg="map_server" type="map_server" args="$(find nav_stack)/map/$(arg map_file)" />
