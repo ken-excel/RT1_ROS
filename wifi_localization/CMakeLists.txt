@@ -65,3 +65,7 @@ target_link_libraries(navigation ${catkin_LIBRARIES})
 add_executable(move src/move.cpp)
 add_dependencies(move ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(move ${catkin_LIBRARIES})
+
+add_executable(straight src/straight.cpp)
+add_dependencies(straight ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(straight ${catkin_LIBRARIES})

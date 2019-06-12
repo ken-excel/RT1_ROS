@@ -17,7 +17,7 @@ RT1Nav::RT1Nav():
 {
 	param_.load(nh_);
 	pos_srv_  = nh_.advertiseService("move_pos", &RT1Nav::PosSrv, this);
-	rss_goal_sub_ = nh_.subscribe("/rss_pc_avg", 1, &RT1Nav::rssRead_goal, this);
+	rss_goal_sub_ = nh_.subscribe("/rss_goal_avg", 1, &RT1Nav::rssRead_goal, this);
 	rss_robot_sub_ = nh_.subscribe("/rss_robot_avg", 1, &RT1Nav::rssRead_robot, this);
 	//Set Initial position
 	goal.target_pose.header.frame_id = "base_link";
@@ -48,7 +48,6 @@ double RT1Nav::compare(wifi_nav::RssAvg rss_g, wifi_nav::RssAvg rss_r) //HERE
 	double elapsed = (t - begin_time).toSec();
 	outputFile<<elapsed<<",";
 	outputFile2<<elapsed<<",";
-
 	for (int i=0; i<rss_g.rss.size(); i++) 
 	{
 		if(rss_g.rss[i].x>-60){
@@ -104,6 +103,21 @@ bool RT1Nav::PosSrv(wifi_nav::Service::Request &req, wifi_nav::Service::Response
 	return true;
 }
 
+void calculateGoal(move_base_msgs::MoveBaseGoal &goal, double a, double b, double c){
+  //Straight
+  goal.target_pose.pose.position.x = a; //0.5
+  goal.target_pose.pose.position.y = b; 
+  //Turning
+  double radians = c * (M_PI/180);
+  tf::Quaternion quaternion;
+  quaternion = tf::createQuaternionFromYaw(radians);
+
+  geometry_msgs::Quaternion qMsg;
+  tf::quaternionTFToMsg(quaternion, qMsg);
+
+  goal.target_pose.pose.orientation = qMsg;
+}
+
 void RT1Nav::rssRead_goal(const wifi_nav::RssAvg &rss)
 {
 	rss_goal = rss;
@@ -121,15 +135,15 @@ void RT1Nav::process()
   	//Scan&Compare
   	if (rss_g_ready&&rss_r_ready){
   		rms_all = RT1Nav::compare(rss_goal, rss_robot); //left = static / right = moving / goal is com / robot is whill
-  		//cout << rms_all << endl;
+  		cout << rms_all << endl;
   	}
   	//Register to log
-  	if(fabs(rms_all )<3)cout<<"goal reached";//goal
+  	if(fabs(rms_all)<5)cout<<"goal reached"<<endl;//goal
   	else{ //goal not reach
   	  	if(!goal_ready) //log current position if robot is stopping
   	  	{	
   		  	position_log plog;
-  		  	plog.pos = instance;
+  		  	plog.pos = instance;	
   		  	plog.x = goal.target_pose.pose.position.x;
   		  	plog.y = goal.target_pose.pose.position.y;
   		  	plog.rms = rms_all;
@@ -144,41 +158,20 @@ void RT1Nav::process()
   			double drms = log[instance].rms - log[instance-1].rms;	
   			if (drms > 0){
   				//TURNING
-  				goal.target_pose.pose.position.x = 0.3; 
-				double theta = 30; 
-				double radians = theta * (M_PI/180);
-				tf::Quaternion quaternion;
-				quaternion = tf::createQuaternionFromYaw(radians);
-				geometry_msgs::Quaternion qMsg;
-				tf::quaternionTFToMsg(quaternion, qMsg);
-				goal.target_pose.pose.orientation = qMsg;
+  				calculateGoal(goal,0,1,-90);
   			} //wrong
   			else{
   				//STRAIGHT
- 				goal.target_pose.pose.position.x = 0.5; 
- 				goal.target_pose.pose.orientation.w = 1.0;
+ 				calculateGoal(goal,1.5,0,0);
   			} //correct
   		}
   		else{
   			//STRAIGHT
- 			goal.target_pose.pose.position.x = 0.5; 
- 			goal.target_pose.pose.orientation.w = 1.0;
+ 			calculateGoal(goal,1.5,0,0);
   		}
-
+  		instance++;
   		goal_ready = true; //send new goal
   	}  
-
-  	//Direction Guess Algorithm 
-  	//RT1Nav::blindwalk();
-  	
- //  	goal.target_pose.header.frame_id = "map";
-	// goal.target_pose.header.stamp = ros::Time::now();
-	// goal.target_pose.pose.position.x=1;
-	// goal.target_pose.pose.position.y=1;
-	// goal.target_pose.pose.orientation.w= 1.0;
-	// goal_ready = true;
-
- //  	instance++;
 }
 
 void RT1Nav::shutdown()
@@ -196,7 +189,11 @@ int main(int argc, char** argv)
 {
 	ros::init(argc, argv, "rt1_nav_node");
 	RT1Nav object;
-	actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction>  ac("move_base", true);
+	actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> ac("move_base", true);
+	while(!ac.waitForServer(ros::Duration(5.0))){
+    	ROS_INFO("Waiting for the move_base action server to come up");
+  	}
+  	ROS_INFO("Move_base action ready");
 	ros::Rate rate(50);
 	object.begin_time = ros::Time::now();
 	outputFile.open("rss_kalman_comparison.txt");
@@ -209,7 +206,7 @@ int main(int argc, char** argv)
 		//LOOP
 		if(goal_ready){
 			//Move
-			ROS_INFO("Sending goal");
+			cout<<object.goal<<endl;
 			ac.sendGoal(object.goal);
 
 			//Stop
@@ -220,7 +217,7 @@ int main(int argc, char** argv)
 			}
 	  		else{
 	  			ROS_INFO("ERROR");
-	  			//exit or do something
+	  			goal_ready = false;
 	  		}
 	  	}
 		rate.sleep();
