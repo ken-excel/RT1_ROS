@@ -17,6 +17,28 @@ $ sudo kill -9 <process id>
 ```
 
 2. RaspberryPi time synchronization
+```
+$ sudo ntpdate ntp.ubuntu.com
+```
 
-3. 
+3. Install all dependencies in src (before build)
+```
+$ rosdep install --from-paths src --ignore-src --rosdistro=kinetic -y
+```
 
+4. Check port
+```
+$ ls -l /dev |grep ttyUSB
+$ ls -l /dev |grep ttyACM
+```
+
+5. Give permission to port (e.g. before using Lidar)
+```
+$ sudo chmod a+rw /dev/ttyUSB0
+$ sudo chmod 666 /dev/ttyACM0
+```
+
+6. Set port speed (RT1)
+```
+$ stty -F /dev/ttyUSB0 raw -echo speed 115200
+```
