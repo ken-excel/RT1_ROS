@@ -32,5 +32,9 @@
                <param name="transform_tolerance" value="0.1"/>
                <param name="recovery_alpha_slow" value="0.0"/>
                <param name="recovery_alpha_fast" value="0.0"/>
+		<param name="initial_pose_x" value="-0.176437017153"/>
+		<param name="initial_pose_y" value="-7.16595070576"/>
+		<param name="initial_pose_a" value="2.3405621"/>
+
           </node>
      </launch>

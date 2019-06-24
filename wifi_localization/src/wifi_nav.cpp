@@ -27,14 +27,10 @@ RT1Nav::RT1Nav():
 	goal.target_pose.pose.orientation.w= 1.0;
 }
 
-void RT1Nav::record(double data1, double data2)
-{
-	outputFile<<data1<<","<<data2<<",";
-}
 
-double RT1Nav::compare(wifi_nav::RssAvg rss_g, wifi_nav::RssAvg rss_r) //HERE
+
+double RT1Nav::compare(wifi_nav::RssAvg rss_g, wifi_nav::RssAvg rss_r, double limit) //HERE
 {
-	bool matching = false;
 	vector<accesspoint> error;
 	accesspoint ap_err;
 	double d;
@@ -46,48 +42,52 @@ double RT1Nav::compare(wifi_nav::RssAvg rss_g, wifi_nav::RssAvg rss_r) //HERE
 	//Write to Log
 	ros::Time t = ros::Time::now();
 	double elapsed = (t - begin_time).toSec();
-	outputFile<<elapsed<<",";
-	outputFile2<<elapsed<<",";
+	double pos_error = sqrt(pow(poseAMCLx-goalx,2)+pow(poseAMCLy-goaly,2));
+	outputFile<<elapsed<<","<<pos_error<<",";
 	for (int i=0; i<rss_g.rss.size(); i++) 
 	{
+	bool matching = false; //!!!!!!!!reinitialize every loop
 		if(rss_g.rss[i].x>-60){
 			int j;
 			for(j=0; j<rss_r.rss.size(); j++)
 			{
-				if(strcmp(rss_r.rss[j].name.c_str(),rss_g.rss[i].name.c_str()) == 0){
+				if(strcmp(rss_r.rss[j].name.c_str(),rss_g.rss[i].name.c_str()) == 0 && rss_r.rss[j].x>limit){
 					matching = true;
 					break;
 				} 
 			}
 			
 			if (matching)
-				{
-					if(rss_r.rss[j].x>-60){	
-						RT1Nav::record(rss_g.rss[i].x,rss_r.rss[j].x);
-						d = fabs(rss_g.rss[i].x - rss_r.rss[j].x);
-						cout << rss_g.rss[i].name << "|" << rss_g.rss[i].x << "|" << rss_r.rss[j].x << "|" << d << endl;
-						root = pow(d,2);
-					}
-				}
-				else
-				{
-					RT1Nav::record(rss_g.rss[i].x,min_rss);
-					d = fabs(rss_g.rss[i].x - min_rss);
-					root = pow(d,2);
-				}
-				ap_err.name=rss_g.rss[i].name.c_str();
-				ap_err.diff=d;
-				error.push_back(ap_err);
-				sum += root;
-				count++;
+			{
+				d = fabs(rss_g.rss[i].x - rss_r.rss[j].x);
+				cout << rss_g.rss[i].name << "|" << rss_g.rss[i].x << "|" << rss_r.rss[j].x << "|" << d << endl;
+				root = pow(d,2);
+				outputFile<<d<<","<<rss_g.rss[i].x<<","<<rss_r.rss[j].x<<",";
+				if(strcmp(rss_r.rss[j].name.c_str(),"(AirPort10223)") == 0){
+					if(rss_r.rss[j].x > -40) goal_reached = true;				
+				}			
+			}
+			else
+			{
+				d = fabs(rss_g.rss[i].x - limit);
+				cout << rss_g.rss[i].name << "|" << rss_g.rss[i].x << "|" << limit << "[min_rss]|" << d << endl;
+				root = pow(d,2);
+				outputFile<<d<<","<<rss_g.rss[i].x<<","<<"NotFound"<<",";					
+			}
+			ap_err.name=rss_g.rss[i].name.c_str();
+			ap_err.diff=d;
+			error.push_back(ap_err);
+			sum += root;
+			count++;
 		}
+		else outputFile<<"nil,-,-,"; 
 	}
-	outputFile<<endl;
 	ap_error = error;
-	double avg = sum/count;
+	double avg;
+	if (count!= 0) avg = sum/count;
+	else avg = 0;
 	rms = sqrt(avg);
-	cout<<rms<<endl<<endl;
-	outputFile2<<rms<<endl;
+	outputFile<<rms<<endl;
 	return rms;
 }
 
@@ -104,18 +104,18 @@ bool RT1Nav::PosSrv(wifi_nav::Service::Request &req, wifi_nav::Service::Response
 }
 
 void calculateGoal(move_base_msgs::MoveBaseGoal &goal, double a, double b, double c){
-  //Straight
-  goal.target_pose.pose.position.x = a; //0.5
-  goal.target_pose.pose.position.y = b; 
-  //Turning
-  double radians = c * (M_PI/180);
-  tf::Quaternion quaternion;
-  quaternion = tf::createQuaternionFromYaw(radians);
+	//Straight
+	goal.target_pose.pose.position.x = a; //0.5
+	goal.target_pose.pose.position.y = b; 
+	//Turning
+	double radians = c * (M_PI/180);
+	tf::Quaternion quaternion; 
+	quaternion = tf::createQuaternionFromYaw(radians);
 
-  geometry_msgs::Quaternion qMsg;
-  tf::quaternionTFToMsg(quaternion, qMsg);
+	geometry_msgs::Quaternion qMsg;
+	tf::quaternionTFToMsg(quaternion, qMsg);
 
-  goal.target_pose.pose.orientation = qMsg;
+	goal.target_pose.pose.orientation = qMsg;
 }
 
 void RT1Nav::rssRead_goal(const wifi_nav::RssAvg &rss)
@@ -130,15 +130,20 @@ void RT1Nav::rssRead_robot(const wifi_nav::RssAvg &rss)
 	rss_r_ready = true;
 }
 
+void RT1Nav::Read_pose(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& msgAMCL)
+{
+	poseAMCLx = msgAMCL->pose.pose.position.x;
+	poseAMCLy = msgAMCL->pose.pose.position.y;
+}
+
 void RT1Nav::process()
 {
   	//Scan&Compare
-  	if (rss_g_ready&&rss_r_ready){
-  		rms_all = RT1Nav::compare(rss_goal, rss_robot); //left = static / right = moving / goal is com / robot is whill
-  		cout << rms_all << endl;
-  	}
+	ROS_INFO("SCAN");
+  	rms_all = RT1Nav::compare(rss_goal, rss_robot, -60); 
+  	cout << rms_all << endl;
   	//Register to log
-  	if(fabs(rms_all)<5)cout<<"goal reached"<<endl;//goal
+  	if(goal_reached)cout<<"goal reached"<<endl;//goal
   	else{ //goal not reach
   	  	if(!goal_ready) //log current position if robot is stopping
   	  	{	
@@ -171,18 +176,15 @@ void RT1Nav::process()
   		}
   		instance++;
   		goal_ready = true; //send new goal
+		ROS_INFO("GOAL_SEND");
   	}  
 }
 
 void RT1Nav::shutdown()
 {
-	outputFile<<"Time,";
-	for (int i = 0; i < rss_robot.rss.size(); i++){
-		outputFile<<rss_robot.rss[i].name<<"ST,";
-		outputFile<<rss_robot.rss[i].name<<"MV";
-		if (i != rss_robot.rss.size()-1) outputFile<<",";
-		else outputFile<<endl;
-	}
+	outputFile<<"Time,Distance,";
+	for(int i=0; i<rss_goal.rss.size(); i++) outputFile<<rss_goal.rss[i].name.c_str()<<",Goal,Robot,"; //each AP
+	outputFile<<"RMS";  
 }
 
 int main(int argc, char** argv)
@@ -190,21 +192,22 @@ int main(int argc, char** argv)
 	ros::init(argc, argv, "rt1_nav_node");
 	RT1Nav object;
 	actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> ac("move_base", true);
-	while(!ac.waitForServer(ros::Duration(5.0))){
+	/*while(!ac.waitForServer(ros::Duration(5.0))){
     	ROS_INFO("Waiting for the move_base action server to come up");
   	}
-  	ROS_INFO("Move_base action ready");
+  	ROS_INFO("Move_base action ready");*/
 	ros::Rate rate(50);
 	object.begin_time = ros::Time::now();
-	outputFile.open("rss_kalman_comparison.txt");
-	outputFile2.open("rms.txt");
+	outputFile.open("experiment.txt");
+	//outputFile2.open("rms.txt");
 	while(ros::ok() && !interrupted)
 	{
 		signal(SIGINT, mySigintHandler);
 		ros::spinOnce();
+		if(rss_g_ready&&rss_r_ready){
 		object.process();
 		//LOOP
-		if(goal_ready){
+		/*if(goal_ready){
 			//Move
 			cout<<object.goal<<endl;
 			ac.sendGoal(object.goal);
@@ -219,7 +222,10 @@ int main(int argc, char** argv)
 	  			ROS_INFO("ERROR");
 	  			goal_ready = false;
 	  		}
-	  	}
+	  	}*/
+		ROS_INFO("SLEEP");
+		ros::Duration(2).sleep();
+		}		
 		rate.sleep();
 	}
 
@@ -227,7 +233,7 @@ int main(int argc, char** argv)
 	    ROS_ERROR("SHUTDOWN");
 	    object.shutdown();
 	    outputFile.close();
-	    outputFile2.close();
+	    //outputFile2.close();
 	    ros::shutdown();
 	}
 	return 0;

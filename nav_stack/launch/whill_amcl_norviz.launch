@@ -1,0 +1,32 @@
+<launch>
+  <arg name="map_file" default="lab_mod.yaml"/>
+  <arg name="launch_rviz" default="false"/>
+  <arg name="with_camera" default="false"/>
+  <arg name="use_lsm" default="false"/>
+  <arg name="pub_cmdvel" default="true"/>
+
+  <!--node pkg="tf" type="static_transform_publisher" name="base_link_to_laser"
+args="0.4 0.2 0.0 0.0 0.0 0.0 /base_link /laser 100" /-->
+
+  <!-- cmdvel to joy translator (for whill) -->
+  <node if="$(arg pub_cmdvel)" name="cmdvel_to_joy" pkg="ros_whill" type="cmdvel_to_joy"/> 
+
+  <!-- Map server -->
+  <node name="map_server" pkg="map_server" type="map_server" args="$(find nav_stack)/map/$(arg map_file)" />
+
+  <!-- AMCL -->
+  <include file="$(find nav_stack)/launch/include/amcl.launch.xml"/>
+
+  <!-- Move base -->
+  <include file="$(find nav_stack)/launch/include/move_base.launch.xml"/>
+
+  <!-- Laser Scan Matcher -->
+  <include if="$(arg use_lsm)" file="$(find nav_stack)/launch/laser_scan_matcher.launch"/>
+
+  <!-- Rviz -->
+  <include if="$(arg launch_rviz)" file="$(find nav_stack)/launch/rviz.launch"/>
+
+  <node if="$(arg with_camera)" name="image_transport" pkg="image_transport" type="republish" args="compressed in:=/raspicam_node/image raw out:=/camera/image_raw"/>
+
+</launch>
+

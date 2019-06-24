@@ -8,6 +8,7 @@
 #include "wifi_nav/Service.h"
 #include <move_base_msgs/MoveBaseAction.h>
 #include <actionlib/client/simple_action_client.h>
+#include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <vector>
 #include <iostream>
 #include <fstream>
@@ -39,8 +40,13 @@ private:
 	double th;
 
 	int instance = 0;
-	double min_rss = -90.0;
 	double rms_all;
+
+	double poseAMCLx, poseAMCLy;
+	double goalx = -4.07508277893;
+	double goaly = -1.92194521427;
+
+	bool goal_reached = false;
 
 	typedef struct{
 		string name;
@@ -59,9 +65,10 @@ private:
 	vector<position_log> log;
 
 	void record(double data1, double data2);
-	double compare(wifi_nav::RssAvg rss_g, wifi_nav::RssAvg rss_r);
+	double compare(wifi_nav::RssAvg rss_g, wifi_nav::RssAvg rss_r, double limit);
 	void rssRead_goal(const wifi_nav::RssAvg &rss);
 	void rssRead_robot(const wifi_nav::RssAvg &rss);
+	void Read_pose(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& msgAMCL);
 	bool PosSrv(wifi_nav::Service::Request &req, wifi_nav::Service::Response &res);
 
 	//Algorithm Function

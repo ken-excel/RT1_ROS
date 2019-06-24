@@ -1,7 +1,7 @@
 global_frame: map #odom -okay
 
 rolling_window: true
-publish_frequency: 5.0 #5.0 -okay
+publish_frequency: 10.0 #5.0 -okay
 
 width: 5.0
 height: 5.0
