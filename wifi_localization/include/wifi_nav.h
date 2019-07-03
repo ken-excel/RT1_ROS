@@ -10,6 +10,7 @@
 #include <actionlib/client/simple_action_client.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <vector>
+#include <unordered_set>
 #include <iostream>
 #include <fstream>
 
@@ -63,6 +64,8 @@ private:
 	}position_log;
 
 	vector<position_log> log;
+
+	unordered_set<string> list = {"(AirPort10223)","(haptic)","(HirataLab)","(HirataLab_Guest)"};
 
 	void record(double data1, double data2);
 	double compare(wifi_nav::RssAvg rss_g, wifi_nav::RssAvg rss_r, double limit);

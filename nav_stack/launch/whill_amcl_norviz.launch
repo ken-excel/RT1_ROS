@@ -1,5 +1,5 @@
 <launch>
-  <arg name="map_file" default="lab_mod.yaml"/>
+  <arg name="map_file" default="mymap2.yaml"/>
   <arg name="launch_rviz" default="false"/>
   <arg name="with_camera" default="false"/>
   <arg name="use_lsm" default="false"/>
