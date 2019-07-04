@@ -62,6 +62,10 @@ add_executable(navigation src/wifi_nav.cpp)
 add_dependencies(navigation ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(navigation ${catkin_LIBRARIES})
 
+add_executable(navigation_re src/wifi_nav_recursive.cpp)
+add_dependencies(navigation_re ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(navigation_re ${catkin_LIBRARIES})
+
 add_executable(movestop_ap src/movestop_ap.cpp)
 add_dependencies(movestop_ap ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(movestop_ap ${catkin_LIBRARIES})

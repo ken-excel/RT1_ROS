@@ -9,6 +9,7 @@
 #include <move_base_msgs/MoveBaseAction.h>
 #include <actionlib/client/simple_action_client.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
+#include <visualization_msgs/Marker.h>
 #include <vector>
 #include <unordered_set>
 #include <iostream>
@@ -35,8 +36,11 @@ private:
 	ros::Subscriber rss_goal_sub_; //subscribe rss data
 	ros::Subscriber rss_robot_sub_; //subscribe rss data
 	//ros::Subscriber status_sub_; //subscribe status of robot whether has it reached the goal yet?  
+	
+	ros::Publisher marker_pub;
 
 	wifi_nav::RssAvg rss_goal, rss_robot;
+	visualization_msgs::Marker points;
 	
 	double th;
 
@@ -73,6 +77,7 @@ private:
 	void rssRead_robot(const wifi_nav::RssAvg &rss);
 	void Read_pose(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& msgAMCL);
 	bool PosSrv(wifi_nav::Service::Request &req, wifi_nav::Service::Response &res);
+	void genPoint(double pos_x, double pos_y);
 
 	//Algorithm Function
 	void blindwalk();

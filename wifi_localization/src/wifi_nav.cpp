@@ -19,12 +19,26 @@ RT1Nav::RT1Nav():
 	pos_srv_  = nh_.advertiseService("move_pos", &RT1Nav::PosSrv, this);
 	rss_goal_sub_ = nh_.subscribe("/rss_goal_avg", 1, &RT1Nav::rssRead_goal, this);
 	rss_robot_sub_ = nh_.subscribe("/rss_robot_avg", 1, &RT1Nav::rssRead_robot, this);
+	ros::Publisher marker_pub = nh_.advertise<visualization_msgs::Marker>("visualization_marker", 20);
 	//Set Initial position
 	goal.target_pose.header.frame_id = "base_link";
 	goal.target_pose.header.stamp = ros::Time::now();
 	goal.target_pose.pose.position.x= 0.0;
 	goal.target_pose.pose.position.y= 0.0;
 	goal.target_pose.pose.orientation.w= 1.0;
+
+	//point format
+	points.header.frame_id = "/map";
+    points.header.stamp = ros::Time::now();
+    points.ns = "points_history";
+    points.action = visualization_msgs::Marker::ADD;
+    points.pose.orientation.w = 1.0;
+    points.id = 0;
+    points.type = visualization_msgs::Marker::POINTS;
+    points.scale.x = 0.2;
+    points.scale.y = 0.2;
+    points.color.r = 1.0;
+    points.color.a = 1.0;
 }
 
 
@@ -103,6 +117,17 @@ bool RT1Nav::PosSrv(wifi_nav::Service::Request &req, wifi_nav::Service::Response
 	return true;
 }
 
+void RT1Nav::genPoint(double pos_x, double pos_y)
+{
+	geometry_msgs::Point p;
+    	p.x = pos_x;
+    	p.y = pos_y;
+      	p.z = 0;
+
+    points.points.push_back(p);
+}
+
+
 void calculateGoal(move_base_msgs::MoveBaseGoal &goal, double a, double b, double c){
 	//Straight
 	goal.target_pose.pose.position.x = a; //0.5
@@ -154,6 +179,8 @@ void RT1Nav::process()
   		  	plog.rms = rms_all;
   		  	plog.error = ap_error;
   		  	log.push_back(plog);
+  		  	RT1Nav::genPoint(plog.x,plog.y);
+  		  	marker_pub.publish(points);
   	 	}
   		//goal generation
   		
@@ -216,7 +243,7 @@ int main(int argc, char** argv)
 	ros::init(argc, argv, "rt1_nav_node");
 	RT1Nav object;
 	actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> ac("move_base", true);
-	while(!ac.waitForServer(ros::Duration(5.0))){
+	while(!ac.waitForServer()){
     	ROS_INFO("Waiting for the move_base action server to come up");
   	}
   	ROS_INFO("Move_base action ready");
