@@ -50,14 +50,6 @@ add_executable(wifi_node src/wifi_node.cpp)
 add_dependencies(wifi_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(wifi_node ${catkin_LIBRARIES})
 
-add_executable(loc_node src/location_node.cpp)
-add_dependencies(loc_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(loc_node ${catkin_LIBRARIES})
-
-add_executable(find_loc src/find_location.cpp)
-add_dependencies(find_loc ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(find_loc ${catkin_LIBRARIES})
-
 add_executable(navigation src/wifi_nav.cpp)
 add_dependencies(navigation ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(navigation ${catkin_LIBRARIES})
@@ -65,6 +57,10 @@ target_link_libraries(navigation ${catkin_LIBRARIES})
 add_executable(navigation_re src/wifi_nav_recursive.cpp)
 add_dependencies(navigation_re ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(navigation_re ${catkin_LIBRARIES})
+
+add_executable(wifi_database src/wifi_database.cpp)
+add_dependencies(wifi_database ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(wifi_database sqlite3 ${catkin_LIBRARIES})
 
 add_executable(movestop_ap src/movestop_ap.cpp)
 add_dependencies(movestop_ap ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
@@ -81,3 +77,11 @@ target_link_libraries(straight_ap ${catkin_LIBRARIES})
 add_executable(measure src/measure.cpp)
 add_dependencies(measure ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(measure ${catkin_LIBRARIES})
+
+add_executable(database_test src/db_test.cpp)
+add_dependencies(database_test ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(database_test sqlite3 ${catkin_LIBRARIES})
+
+add_executable(goal_nav src/wifi_nav_goal.cpp)
+add_dependencies(goal_nav ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(goal_nav sqlite3 ${catkin_LIBRARIES})

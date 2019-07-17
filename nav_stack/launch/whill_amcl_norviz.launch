@@ -1,5 +1,5 @@
 <launch>
-  <arg name="map_file" default="mymap2.yaml"/>
+  <arg name="map_file" default="F5.yaml"/>
   <arg name="launch_rviz" default="false"/>
   <arg name="with_camera" default="false"/>
   <arg name="use_lsm" default="false"/>
@@ -9,7 +9,7 @@
 args="0.4 0.2 0.0 0.0 0.0 0.0 /base_link /laser 100" /-->
 
   <!-- cmdvel to joy translator (for whill) -->
-  <node if="$(arg pub_cmdvel)" name="cmdvel_to_joy" pkg="ros_whill" type="cmdvel_to_joy"/> 
+  <!--node if="$(arg pub_cmdvel)" name="cmdvel_to_joy" pkg="ros_whill" type="cmdvel_to_joy"/--> 
 
   <!-- Map server -->
   <node name="map_server" pkg="map_server" type="map_server" args="$(find nav_stack)/map/$(arg map_file)" />

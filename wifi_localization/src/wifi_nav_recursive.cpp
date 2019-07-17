@@ -1,6 +1,4 @@
-#include <signal.h>
-#include <tf/transform_datatypes.h>
-#include "wifi_nav_recursive.h"
+#include "include_wifi_nav.h"
 
 bool interrupted = false;
 bool goal_ready = false;
