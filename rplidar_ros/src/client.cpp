@@ -45,14 +45,12 @@
 void scanCallback(const sensor_msgs::LaserScan::ConstPtr& scan)
 {
     int count = scan->scan_time / scan->time_increment;
-    //ROS_INFO("I heard a laser scan %s[%d]:", scan->header.frame_id.c_str(), count);
-    //ROS_INFO("angle_range, %f, %f", RAD2DEG(scan->angle_min), RAD2DEG(scan->angle_max));
-    float min_angle = 0;
-    for(int i = 1; i < count; i++) {
+    ROS_INFO("I heard a laser scan %s[%d]:", scan->header.frame_id.c_str(), count);
+    ROS_INFO("angle_range, %f, %f", RAD2DEG(scan->angle_min), RAD2DEG(scan->angle_max));
+    for(int i = 0; i < count; i++) {
         float degree = RAD2DEG(scan->angle_min + scan->angle_increment * i);
-        if(scan->ranges[i]<scan->ranges[min_angle]&& scan->ranges[i]>0.1 && scan->ranges[i]<100) min_angle=i;
+        ROS_INFO(": [%f, %f]", degree, scan->ranges[i]);
     }
-    std::cout<<RAD2DEG(scan->angle_min + scan->angle_increment * min_angle)<<"/"<<scan->ranges[min_angle]<<std::endl;
 }
 
 int main(int argc, char **argv)

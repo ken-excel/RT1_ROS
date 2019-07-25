@@ -7,6 +7,7 @@
 #include <fstream>
 #include <sstream>
 #include <sqlite3.h> 
+#include <std_msgs/Bool.h>
 
 wifi_nav::RssAvg rss_robot;
 bool interrupted = false;
@@ -19,6 +20,7 @@ double cellsize_y = 2;
 int current_column = -1;
 int current_row = -1;
 double poseAMCLx, poseAMCLy;
+bool db_signal;
 
 static int callback(void *NotUsed, int argc, char **argv, char **azColName) {
    int i;
@@ -49,6 +51,11 @@ void Read_pose(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& msgAMCL
 	pose_ready = true;
 }
 
+void db_signal_cb(const std_msgs::Bool::ConstPtr& db_lock)
+{
+	db_signal = db_lock->data;
+}
+
 std::string updatequery(std::string ssid, double rssi, int column, int row)
 {
 	std::string sql;
@@ -62,19 +69,20 @@ std::string updatequery(std::string ssid, double rssi, int column, int row)
 	std::string str_column = s_column.str(); 
 	std::string str_row = s_row.str(); 
 
-	sql = "INSERT OR REPLACE INTO RSSI_RECORD (SSID,COLUMN,ROW,RSSI)" \
-   "VALUES ("+str_ssid+","+str_column+","+str_row+","+str_rssi+")";
+	sql = "INSERT OR REPLACE INTO RSSI_RECORD (SSID,ROW,COLUMN,RSSI)" \
+   "VALUES ("+str_ssid+","+str_row+","+str_column+","+str_rssi+")";
 
    	return sql;
 }
 
 int main(int argc, char** argv)
 {
-	ros::init(argc, argv, "rt1_nav_node");
+	ros::init(argc, argv, "wifi_db");
 	ros::NodeHandle nh_;
 
 	ros::Subscriber pose_sub = nh_.subscribe("/amcl_pose", 10, &Read_pose);
 	ros::Subscriber rss_robot_sub_ = nh_.subscribe("/rss_robot_avg", 10, &rssRead_robot);
+	ros::Subscriber db_signal_sub = nh_.subscribe("/db_signal", 10, &db_signal_cb);
 
 	sqlite3 *db;
    	char *zErrMsg = 0;
@@ -99,7 +107,7 @@ int main(int argc, char** argv)
 	{
 		signal(SIGINT, mySigintHandler);
 		ROS_INFO("ROBOT_SCAN");
-		if(rss_r_ready && pose_ready){
+		if(rss_r_ready && pose_ready && !db_signal){
 			for (int i=0; i<rss_robot.rss.size(); i++){
 				//Update query data
 				std::string ssid = rss_robot.rss[i].name;
