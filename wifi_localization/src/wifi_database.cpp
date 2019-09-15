@@ -20,7 +20,7 @@ double cellsize_y = 2;
 int current_column = -1;
 int current_row = -1;
 double poseAMCLx, poseAMCLy;
-bool db_signal;
+bool db_signal = false;
 
 static int callback(void *NotUsed, int argc, char **argv, char **azColName) {
    int i;
@@ -44,10 +44,10 @@ void rssRead_robot(const wifi_nav::RssAvg &rss)
 
 void Read_pose(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& msgAMCL)
 {
-	poseAMCLx = msgAMCL->pose.pose.position.x;
-	poseAMCLy = msgAMCL->pose.pose.position.y;
+	poseAMCLx = std::round(msgAMCL->pose.pose.position.x*2)/2;
+	poseAMCLy = std::round(-msgAMCL->pose.pose.position.y*2)/2;
 	current_column = poseAMCLx/cellsize_x;
-	current_row = -poseAMCLy/cellsize_y;
+	current_row = poseAMCLy/cellsize_y;
 	pose_ready = true;
 }
 
@@ -56,21 +56,25 @@ void db_signal_cb(const std_msgs::Bool::ConstPtr& db_lock)
 	db_signal = db_lock->data;
 }
 
-std::string updatequery(std::string ssid, double rssi, int column, int row)
+std::string updatequery(std::string ssid, double rssi)
 {
 	std::string sql;
 	/* SQL statement Format*/
 	std::string str_ssid = "'"+ssid+"'";
-	std::ostringstream s_rssi, s_column, s_row;
+	std::ostringstream s_rssi, s_column, s_row, s_x, s_y;
 	s_rssi << rssi;
-	s_column << column;
-	s_row << row;
+	s_column << current_column;
+	s_row << current_row;
+	s_x << poseAMCLx;
+	s_y << poseAMCLy; 
 	std::string str_rssi = s_rssi.str();
 	std::string str_column = s_column.str(); 
-	std::string str_row = s_row.str(); 
+	std::string str_row = s_row.str();
+	std::string str_x = s_x.str();
+	std::string str_y = s_y.str(); 
 
-	sql = "INSERT OR REPLACE INTO RSSI_RECORD (SSID,ROW,COLUMN,RSSI)" \
-   "VALUES ("+str_ssid+","+str_row+","+str_column+","+str_rssi+")";
+	sql = "INSERT OR REPLACE INTO RSSI_RECORD (SSID,ROW,COLUMN,RSSI,X,Y)" \
+   "VALUES ("+str_ssid+","+str_row+","+str_column+","+str_rssi+","+str_x+","+str_y+")";
 
    	return sql;
 }
@@ -112,9 +116,7 @@ int main(int argc, char** argv)
 				//Update query data
 				std::string ssid = rss_robot.rss[i].name;
 				double rssi = rss_robot.rss[i].x;
-				int column = current_column;
-				int row = current_row;
-				sql = updatequery(ssid, rssi, column, row);
+				sql = updatequery(ssid, rssi);
 				std::cout<<sql<<std::endl;
 				/* Execute SQL statement */
 			   	rc = sqlite3_exec(db, sql.c_str(), callback, 0, &zErrMsg);

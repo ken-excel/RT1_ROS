@@ -40,8 +40,10 @@ typedef struct{
 
 static int callback(void *ptr, int argc, char **argv, char **azColName) {
 	//Column 0 1 2 3 4 5 = SSID, ROW, COLUMN, RSSI, X, Y
-	std::string db_ssid = argv[2] ? argv[2] : "NONE";
+	if (error == 9999) error = 0;
+	std::string db_ssid = argv[0] ? argv[0] : "NONE";
 	if(whitelist.find(db_ssid)!=whitelist.end()){
+		//std::cout<<"WHITELISTED:" <<db_ssid<<std::endl;
 		for(int k =0; k<rss_goal.rss.size(); k++){
 			if (db_ssid == rss_goal.rss[k].name){
 				db_value = argv[3] ? atof(argv[3]) : 9999;
@@ -88,16 +90,10 @@ int main(int argc, char** argv)
 		file_row = argv[1];
 		file_column = argv[2];
 	} 
-	file_name = "exp2_result("+file_row+","+file_column+").txt";
+	file_name = "exp_result("+file_row+","+file_column+").txt";
 	outputFile.open(file_name);
 
-	typedef actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> MoveBaseClient;
-	MoveBaseClient ac("move_base", true);
-	while(!ac.waitForServer(ros::Duration(5.0))){
-    		ROS_INFO("Waiting for the move_base action server to come up");
-  	}
-  	ROS_INFO("Ready");
-
+    ros::Rate rate(0.2);
 	whitelist = {"(AirPort10223)","(haptic)","(HirataLab)","(WiFiNav_A)","(WiFiNav_B)","(WiFiNav_C)"};
 
 	sqlite3 *db;
@@ -124,12 +120,12 @@ int main(int argc, char** argv)
 			knn first_min, second_min, third_min, fourth_min, fifth_min;
 			double lowest_row, lowest_column;
 			std_msgs::Bool db_signal;
-			for (double i=0; i<std::round(mapsize_y*2+0.5)/2; i=i+0.5) 
+			for (double i=0; i<20; i=i+0.5) 
 			{
 				//std::cout<<"Row: " << i;
-				for (double j=0; j<std::round(mapsize_x*2+0.5)/2; j=j+0.5) 
+				for (double j=0; j<42; j=j+0.5) 
 				{
-					error = 0;
+					error = 9999;
 					//std::cout<<" Column: " << j;	
 					std::ostringstream s_x, s_y;
 					s_x << j;
@@ -154,7 +150,7 @@ int main(int argc, char** argv)
 					db_signal.data = false;
 					db_signal_pub_.publish(db_signal);
 				   	error = error / whitelist.size();
-					std::cout << error << std::endl;
+					if (error != 1666.5) std::cout << db_row << "," << db_column << ":" << error << std::endl;
 				   	if(error<first_min.value){
 				   		fifth_min = fourth_min;
 				   		fourth_min = third_min;
@@ -235,36 +231,17 @@ int main(int argc, char** argv)
 				tf::quaternionTFToMsg(quaternion, qMsg);
 				goal.target_pose.pose.orientation = qMsg;
 
-				//In place rotation
-				goal.target_pose.header.stamp = ros::Time::now();
-				goal.target_pose.pose.position.x= poseAMCLx;
-				goal.target_pose.pose.position.y= poseAMCLy;
-				goal_pub_.publish(goal);
-				ROS_INFO("In-place rotation");
-				ac.sendGoal(goal);
-				ac.waitForResult();
-
 				goal.target_pose.header.stamp = ros::Time::now();
 				goal.target_pose.pose.position.x= goalx;
 				goal.target_pose.pose.position.y= goaly;
 				goal_pub_.publish(goal);
 				ROS_INFO("Sending goal");
-	  			ac.sendGoal(goal);
-				ac.waitForResult();
-	   			if(ac.getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
-	   			{
-	   				ROS_INFO("Success");
-	  			}
-	   			else
-	   			{
-	   				ROS_INFO("Fail");
-	   				ac.cancelAllGoals();
-	   			}
 			}
 			else std::cout<<"DBError"<<std::endl;
 			rss_g_ready = false;
 		}
 		ros::spinOnce();
+		rate.sleep();
 	}
 
 	if(interrupted){
